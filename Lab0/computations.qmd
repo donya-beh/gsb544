@@ -7,6 +7,7 @@ format:
 fig-height: 3.5
 fig-width: 6
 ---
+The work for this lab is stored in the following [link](https://github.com/donya-beh/gsb544/blob/main/Lab0/computations.qmd).
 
 This dataset contains a subset of the fuel economy data from the EPA.
 
