@@ -1,0 +1,49 @@
+---
+title: "Lab 1"
+format: html
+code-fold: true
+embed-resources: true
+---
+# Load in libraries
+```{python}
+import pandas as pd
+from plotnine import *
+import numpy as np
+```
+
+## Task 1
+
+1. Aesthetics being used include x, y, size, and color with variables income, life expectancy, population, and four regions mapped to such aesthetics, respectively.
+
+2. Importing `q1data.csv` dataset:
+```{python}
+q1_data = pd.read_csv('/Users/donyabehroozi/Documents/gsb544/Data/q1data.csv')
+print(q1_data.dtypes)
+```
+
+3. Recreating plot in Task 1: (aesthetics, geometries, scales)
+
+```{python}
+(ggplot(q1_data,
+    aes(
+        x = "income",
+        y = "life_exp",
+        size = "population",
+        color = "four_regions")) +
+        geom_point() +
+        scale_x_continuous(trans="log2", breaks = [500, 1000, 2000, 4000, 8000, 16000, 32000, 64000], labels = [500, 1000, 2000, 4000, 8000, "16k", "32k", "64k"]) +
+        scale_y_continuous(limits = (20, 90), breaks = [20,30,40,50,60,70,80,90], labels = [20,30,40,50,60,70,80,90]) +
+       #scale_size_continuous()
+        labs(
+            x = "Income (per person GDP/capita, PPPS inflation-adjusted)",
+            y = "Life expectancy (years)"
+            ) +
+        theme_bw() +
+        scale_color_manual(
+        values={
+            "africa":  "#70f3ffff",
+            "americas":"#54ff51ff",
+            "asia":    "#ff5050ff",
+            "europe":  "#fbff00ff"})
+)
+```
