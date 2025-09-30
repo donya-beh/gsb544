@@ -1,7 +1,6 @@
 ---
 title: "Lab 1"
 format: html
-code-fold: true
 embed-resources: true
 ---
 # Load in libraries
@@ -13,37 +12,243 @@ import numpy as np
 
 ## Task 1
 
-1. Aesthetics being used include x, y, size, and color with variables income, life expectancy, population, and four regions mapped to such aesthetics, respectively.
+1. Aesthetics being used include x, y, size, and fill with variables income, life expectancy, population, and four regions mapped to such aesthetics, respectively.
 
 2. Importing `q1data.csv` dataset:
 ```{python}
 q1_data = pd.read_csv('/Users/donyabehroozi/Documents/gsb544/Data/q1data.csv')
-print(q1_data.dtypes)
 ```
 
-3. Recreating plot in Task 1: (aesthetics, geometries, scales)
+3. Recreating plot in Task 1:
 
 ```{python}
-(ggplot(q1_data,
+#| warning: false
+q1_data_nona = q1_data.dropna(subset=["income", "life_exp", "population", "four_regions"])
+
+q1_data_nona = q1_data_nona.sort_values("population", ascending=False)
+
+(ggplot(q1_data_nona,
     aes(
         x = "income",
         y = "life_exp",
         size = "population",
-        color = "four_regions")) +
-        geom_point() +
-        scale_x_continuous(trans="log2", breaks = [500, 1000, 2000, 4000, 8000, 16000, 32000, 64000], labels = [500, 1000, 2000, 4000, 8000, "16k", "32k", "64k"]) +
+        fill = "four_regions"
+        )) +
+        geom_point(stroke = 0.5, alpha = 0.7) +
+        scale_x_continuous(limits = (400, 64000), trans="log2", breaks = [500, 1000, 2000, 4000, 8000, 16000, 32000, 64000], labels = [500, 1000, 2000, 4000, 8000, "16k", "32k", "64k"], expand=(0.13,0)) +
         scale_y_continuous(limits = (20, 90), breaks = [20,30,40,50,60,70,80,90], labels = [20,30,40,50,60,70,80,90]) +
-       #scale_size_continuous()
+        scale_size_continuous(range = (1.5,20), trans="sqrt") +
         labs(
             x = "Income (per person GDP/capita, PPPS inflation-adjusted)",
             y = "Life expectancy (years)"
             ) +
-        theme_bw() +
-        scale_color_manual(
+        theme_minimal() +
+        theme(figure_size=(12, 5),
+            legend_position="none"
+            ) +
+        scale_fill_manual(
         values={
             "africa":  "#70f3ffff",
             "americas":"#54ff51ff",
-            "asia":    "#ff5050ff",
-            "europe":  "#fbff00ff"})
+            "asia":    "#ff6262eb",
+            "europe":  "#fbff00ff"}
+            ) +
+        annotate("text",
+        x=5000, 
+        y=50,
+        label="2010", 
+        size=30000, 
+        alpha=0.2, 
+        color="grey")
+)
+```
+
+4. In this scenario, we have three continuous variables (income, life expectancy, and population size) grouped/categorized by the four regions, a categorical variable. Another geometry we can use is `geom_line`. However, this results in a very poor visualization after faceting by the four regions and adjusting line size for population size. It is very unclear what the relationship between income and life expectancy is especially for smaller values of income. We lose a lot of information in this visualization compared to the one above. Also, `geom_line` doesn't seem particularily useful for describing the relationships between these two variables. I would rather use this geometry for comparing a continuous variable with another continuous time-related variable and/or showing trends.
+
+```{python}
+(ggplot(q1_data_nona,
+    aes(
+        x = "income",
+        y = "life_exp"
+    )) +
+    geom_line(aes(size = "population")) +
+    facet_wrap("four_regions") +
+    scale_size_continuous(range = (1.5,20), trans="sqrt") +
+    theme_bw() +
+    labs(
+            x = "Income (per person GDP/capita, PPPS inflation-adjusted)",
+            y = "Life expectancy (years)",
+            fill = "Four Regions",
+            size = "Population"
+        ) +
+    theme(figure_size=(12, 5))
+)
+```
+
+
+## Task 2
+
+1. The aesthetics being used include x, y, size, and fill with variables exports, imports, energy use, and four regions, respectively.
+
+2. Importing `q2data.csv` dataset:
+```{python}
+q2_data = pd.read_csv('/Users/donyabehroozi/Documents/gsb544/Data/q2data.csv')
+#change energy to float
+q2_data.loc[q2_data["energy"] == "12.4k", "energy"] = 12400.0
+q2_data.loc[q2_data["energy"] == "19.3k", "energy"] = 19300.0
+q2_data.loc[q2_data["energy"] == "18.8k", "energy"] = 18800.0
+q2_data.loc[q2_data["energy"] == "11.2k", "energy"] = 11200.0
+q2_data['energy'] = q2_data['energy'].astype(float)
+
+#remove nas
+q2_data_nona = q2_data.dropna(subset=["exports", "imports", "energy", "four_regions"])
+```
+
+3. Recreating plot in Task 2:
+```{python}
+#| warning: false
+q2_data_nona = q2_data_nona[q2_data_nona["energy"] > 0].sort_values("energy", ascending=False)
+
+(ggplot(q2_data_nona,
+    aes(
+        x = "exports",
+        y = "imports",
+        size = "energy",
+        fill = "four_regions"
+        )) +
+        geom_point(stroke = 0.5, alpha = 0.7) +
+        scale_x_continuous(limits = (0,220), breaks = [20,40,60,80,100,120,140,160,180,200,220]) +
+        scale_y_continuous(limits = (50,400), breaks = [50,100,150,200,250,300,350,400], expand=(0.13,0)) +
+        scale_size_continuous(range = (1.5,20), trans="sqrt") +
+        scale_fill_manual(
+        values={
+            "africa":  "#70f3ffff",
+            "americas":"#54ff51ff",
+            "asia":    "#ff6262eb",
+            "europe":  "#fbff00ff"}
+            ) +
+        labs(
+            x = "Exports (\% of GDP)",
+            y = "Imports (\% of GDP)",
+        ) +
+        theme_minimal() +
+        theme(
+            figure_size=(12, 5),
+            legend_position = "none"
+        ) +
+        annotate("text",
+        x=120, 
+        y=200,
+        label="1997", 
+        size=30000, 
+        alpha=0.2, 
+        color="grey")
+)
+```
+
+4. In this scenario, we have three continuous variables (exports, imports, and energy) grouped/categorized by the four regions, a categorical variable. For this task, I explored using `geom_text` instead of `geom_point`. The results were similar to the plot above, except the size of the four regions text is defined by a country's energy usage. This would be an interesting visualization if the data were more spread apart and energy usage was large enough to make the text bigger, but in this case, the output looks messy and it is difficult to gather any insights.
+
+```{python}
+(ggplot(q2_data_nona, 
+    aes(
+        x = "exports",
+        y = "imports",
+        label = "four_regions",
+        size = "energy",
+        color = "four_regions"
+    )) +
+    geom_text() +
+    labs(
+            x = "Exports (\% of GDP)",
+            y = "Imports (\% of GDP)",
+            color = "Four Regions",
+            size = "Energy Use"
+        ) +
+    theme_bw() +
+    theme(figure_size=(12, 5))
+)
+```
+
+## Task 3
+1. The aesthetics being used here are x, y, size, and fill with variables internet users, GDP per capita, income, and four regions, respectively.
+
+2. Importing `q3data.csv` dataset:
+```{python}
+q3_data = pd.read_csv('/Users/donyabehroozi/Documents/gsb544/Data/q3data.csv')
+```
+
+3. Recreating plot in Task 3:
+```{python}
+q3_data_nonna = q3_data.dropna(subset=["internet_users", "gdp", "income", "four_regions"])
+q3_data_nonna = q3_data_nonna.sort_values("income", ascending=False)
+
+(ggplot(q3_data_nonna,
+    aes(
+        x = "internet_users",
+        y = "gdp",
+        size = "income",
+        fill = "four_regions"
+        )) +
+        geom_point(stroke = 0.5, alpha = 0.9) +
+        scale_x_continuous(limits = (0,90), breaks = [10,20,30,40,50,60,70,80,90],
+        expand = (0.13, 0.25)) +
+        scale_y_log10(breaks=[200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000], labels=["200","500","1k","2k","5k","10k","20k","50k","100k"], expand=(0.13,0)) +
+        scale_size_continuous(range = (0,15), trans = "sqrt") +
+        scale_fill_manual(
+        values={
+            "africa":  "#70f3ffff",
+            "americas":"#54ff51ff",
+            "asia":    "#ff6262eb",
+            "europe":  "#fbff00ff"}
+            ) +
+        labs(
+            x = "Individuals using the Internet (\% of population)",
+            y = "GDP/capita (US $, inflation-adjusted)"
+        ) +
+        theme_bw() +
+        theme(figure_size=(12, 5),
+        legend_position="none") +
+        annotate("text",
+        x=45, 
+        y=3500,
+        label="2001", 
+        size=30000, 
+        alpha=0.2, 
+        color="grey")
+)
+```
+
+4. In this scenario, we have three continuous variables (internet users, gdp, and income) grouped/categorized by the four regions, a categorical variable. For this task, I decided to turn income into a categorical variable, with low and high income groups (low income if income is less than mean of overall income, high income otherwise). To visualize the relationship between GDP and internet usage, I used `geom_smooth`. I believe this geometry gives us some interesting insights about the realtionship between internet usage and gdp, but I would be weary about using it without checking linear regression model assumptions. We also only have one observation per country, not a real order to our data. I don't think that we should interpret these variables as a trend separately for each region. `geom_point` is more interpretable in this case, as it shows the relationship between GDP and internet usage across the four regions on the same plot. This allows us to see how this relationship may differ between the four regions as a cluster of countries.
+
+```{python}
+#change income into binary variable
+
+#find mean of income for split point
+q3_data_nonna["income"].mean()
+
+#redefine income as high vs. low
+import numpy as np
+q3_data_nonna["income_group"] = np.where(
+    q3_data_nonna["income"] <= 15975.447513812154, "Low", "High"
+)
+```
+
+```{python}
+#| warning: false
+(ggplot(q3_data_nonna,
+    aes(
+        x = "internet_users",
+        y = "gdp",
+        color = "income_group",
+    )) +
+    geom_smooth() +
+    facet_wrap("four_regions") +
+    labs(
+            x = "Individuals using the Internet (\% of population)",
+            y = "GDP/capita (US $, inflation-adjusted)",
+            color = "Income group"
+        ) +
+    theme_bw() +
+    theme(figure_size=(12, 5))
 )
 ```
