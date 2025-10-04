@@ -1,0 +1,272 @@
+---
+title: "Lab 2"
+author: "Donya Behroozi"
+format: html
+embed-resources: true
+code-fold: true
+---
+# 0 - Importing data and declaring package dependencies
+```{python}
+import pandas as pd
+from datetime import date
+from plotnine import *
+from mizani.formatters import percent_format
+import numpy as np
+avocados = pd.read_csv("/Users/donyabehroozi/Documents/gsb544/Data/avocado-updated-2020.csv.zip")
+```
+
+# 1 - Briefly describe data set
+```{python}
+#| output: false
+avocados.head
+avocados.dtypes
+```
+
+The avocados data set contains 33,045 rows and 13 columns. This is a data set featuring historical data on avocado prices and sales volume in multiple cities, states, and regions in the US. It contains information on the date of observation, average price of a single avocado, whether the avocado is conventional or organic, the year of sale (ranges from 2015 to 2020), city or region of the observation, total sales volume overall, and for product lookup codes 4046 (small Hass avocados), 4225 (large Hass avocados), and 4770 (extra-large Hass avocados), total amount of bags of avocados overall, and for small, large, and extra-large bags. 
+
+# 2 - Clean the data in any way you see fit
+```{python}
+#use map function to create geographical classification variable
+avocados["geography"].unique()
+avocados["geog_class"] = avocados["geography"].map({
+    "Albany":"metro",
+    "Atlanta":"metro",
+    "Baltimore/Washington":"metro",
+    "Boise":"metro",
+    "Boston":"metro",
+    "Buffalo/Rochester":"metro",
+    "California":"state",
+    "Charlotte":"metro",
+    "Chicago":"metro",
+    "Cincinnati/Dayton":"metro",
+    "Columbus":"metro",
+    "Dallas/Ft. Worth":"metro",
+    "Denver":"metro",
+    "Detroit":"metro",
+    "Grand Rapids":"metro",
+    "Great Lakes":"major",
+    "Harrisburg/Scranton":"metro",
+    "Hartford/Springfield":"metro",
+    "Houston":"metro",
+    "Indianapolis":"metro",
+    "Jacksonville":"metro",
+    "Las Vegas":"metro",
+    "Los Angeles":"metro",
+    "Louisville":"metro",
+    "Miami/Ft. Lauderdale":"metro",
+    "Midsouth":"major",
+    "Nashville":"metro",
+    "New Orleans/Mobile":"metro",
+    "New York":"metro",
+    "Northeast":"major",
+    "Northern New England":"major",
+    "Orlando":"metro",
+    "Philadelphia":"metro",
+    "Phoenix/Tucson":"metro",
+    "Pittsburgh":"metro",
+    "Plains":"major",
+    "Portland":"metro",
+    "Raleigh/Greensboro":"metro",
+    "Richmond/Norfolk":"metro",
+    "Roanoke":"metro",
+    "Sacramento":"metro",
+    "San Francisco":"metro",
+    "Seattle":"metro",
+    "South Carolina":"state",
+    "South Central":"major",
+    "Southeast":"major",
+    "Spokane":"metro",
+    "St. Louis":"metro",
+    "Syracuse":"metro",
+    "Tampa":"metro",
+    "Total U.S.":"national",
+    "West":"major",
+    "West Tex/New Mexico":"metro",
+    "San Diego":"metro"
+})
+
+#rename PLU variables
+avocados = avocados.rename(columns={
+    "4046":"small_avo",
+    "4225":"large_avo",
+    "4770":"extra_large_avo"
+})
+```
+
+# 3 - Which major geographical region sold the most total organic, small Hass avocados in 2017?
+```{python}
+avocados_q3 = avocados.loc[:, ["geography", "geog_class", "small_avo", "year", "type"]]
+
+avocados_q3 = avocados_q3[(avocados_q3["geog_class"]=="major") &
+            (avocados_q3["type"]=="organic") &
+            (avocados_q3["year"]==2017)]
+
+#create summary
+avocados_q3[["small_avo", "geography"]].groupby("geography").sum().sort_values("small_avo", ascending = False)
+```
+
+The major geographical region that sold the most organic, small Hass avocados in 2017 was the West.
+
+# 4 - Split the date variable into month, day, and year variables. In which month is the highest average volume of avocado sales?
+```{python}
+#make date variable into date object
+avocados["date"] = pd.to_datetime(avocados["date"])
+
+#create month, day, year variables
+avocados["month"] = avocados["date"].dt.month
+avocados["day"] = avocados["date"].dt.day
+avocados["year"] = avocados["date"].dt.year
+
+#filter by main US regions
+avocados_national = avocados[avocados["geog_class"]=="national"]
+avocados_major_reg = avocados[avocados["geog_class"]=="major"]
+avocados_metro_reg = avocados[avocados["geog_class"]=="metro"]
+
+#finding month with highest average volume of avocado sales
+print((avocados_national[["month", "total_volume"]].groupby("month").mean().sort_values("total_volume", ascending = False)))
+
+print((avocados_major_reg[["month", "total_volume"]].groupby("month").mean().sort_values("total_volume", ascending = False)))
+
+print((avocados_metro_reg[["month", "total_volume"]].groupby("month").mean().sort_values("total_volume", ascending = False)))
+```
+
+Month 5, or May, has the highest average volume of avocado sales. We can see that this result holds true across all possible levels of region (major, metro, or total U.S.).
+
+# 5 - Which metro area geographical regions sold the most total avocados?
+```{python}
+avocados_q5 = avocados.loc[:, ["geography", "geog_class", "total_volume"]]
+
+avocados_q5 = avocados_q5[avocados_q5["geog_class"]=="metro"]
+
+print(avocados_q5[["total_volume", "geography"]].groupby("geography").mean().sort_values("total_volume", ascending = False).head(5))
+
+avocados_q5_viz = avocados_q5[(avocados_q5["geography"]=="Los Angeles") | 
+(avocados_q5["geography"]=="New York") | 
+(avocados_q5["geography"]=="Dallas/Ft. Worth") |
+(avocados_q5["geography"]=="Houston") |
+(avocados_q5["geography"]=="Phoenix/Tucson")]
+```
+
+```{python}
+(ggplot(avocados_q5_viz,
+    aes(
+        x = "geography",
+        y = "total_volume"
+    )) +
+    geom_boxplot() +
+    theme(axis_text_x=element_text(angle=45, hjust=1)) +
+    labs(
+        x = "City",
+        y = "Total Number Sold",
+        title = "Distribution of Total Avocado Sales Volume by City",
+        subtitle = "Cities are the top five regions with the largest total sales volume averages"
+    ) +
+    theme_bw()
+)
+```
+
+The metro area geographical regions that sold the most total avocados include Los Angeles, New York, Dallas/Ft. Worth, Houston, and Phoenix/Tuscon.
+
+# 6 - From your cleaned data set, create a data set with only these California regions.
+
+```{python}
+avocado_CA = avocados[avocados["geography"].isin(["Los Angeles", "San Diego", "Sacramento", "San Francisco"])]
+```
+
+# 7 - In which California regions is the price of organic versus conventional avocados most different?
+
+```{python}
+avocado_CA_wide = avocado_CA.pivot(index = ["geography","date"], columns = "type", values = "average_price")
+avocado_CA_wide = avocado_CA_wide.reset_index()
+
+avocado_CA_wide["diff_in_price"] = avocado_CA_wide["organic"] - avocado_CA_wide["conventional"]
+
+#summary statistics
+avocado_CA_wide.groupby("geography")["diff_in_price"].agg(n = "size", mean = "mean", median = "median", sd = "std", min = "min", max = "max").sort_values("mean", ascending = False)
+```
+
+```{python}
+#visualization
+(ggplot(avocado_CA_wide,
+    aes(
+        x = "geography",
+        y = "diff_in_price"
+    )) +
+    geom_boxplot() +
+    theme_bw() +
+    labs(
+        x = "City",
+        y = "Difference in Price (organic - conventional)",
+        title = "Distribution of Difference in Price by CA City"
+    )
+)
+```
+
+The price of organic versus conventional avocados is most different for San Francisco, which has the largest average price difference (mean of 0.719 and median of 0.71 over all observed years) compared to the rest of the California regions. However, San Francisco also has the largest standard deviation across all California regions, so we may want to collect more data from recent years to get a larger sample size before solifying our answer.
+
+# 8 - The following plot shows, for all four California regions, the proportion of the average Hass avocado sales that are small, large, or extra large; conventional vs. organic. Recreate the plot.
+```{python}
+avocado_CA_q8 = avocado_CA[["geography", "date", "type", "small_avo", "large_avo", "extra_large_avo"]] 
+
+avocado_CA_long = avocado_CA_q8.melt(id_vars=["geography", "date", "type"], var_name="size", value_name="sales_volume")
+```
+```{python}
+(ggplot(avocado_CA_long,
+    aes(
+        x = "geography",
+        weight = "sales_volume",
+        fill = "size"
+    )) +
+    geom_bar(position = "fill") +
+    labs(
+        x = "Region of California",
+        y = "Proportion",
+        title = "Proportion of Average Haas Avocado Sales by Size"
+    ) +
+    scale_y_continuous(labels=percent_format()) +
+    facet_wrap("type") +
+    theme_bw() +
+    theme(axis_text_x=element_text(angle=45, hjust=1)) +
+    scale_fill_manual(values = ['#b292d8ff', '#00ba91ff', '#ea7900ff'],
+    labels = ["XL", "Large", "Small"])
+)
+```
+
+# 9 - Using outside data
+```{python}
+#read in housing data
+housing = pd.read_csv('/Users/donyabehroozi/Downloads/MedianPricesofExistingDetachedHomesHistoricalData(Median Price).csv')
+
+#select variables of interest
+housing = housing[["Month", "Year", "Los Angeles", "Sacramento", "San Diego", "San Francisco"]]
+
+#rename columns
+housing = housing.rename(columns={'Month': 'month', 'Year': 'year'})
+
+#transform dataset
+housing_long = housing.melt(id_vars=["month", "year"], var_name="geography", value_name="housing_price")
+
+housing_long = housing_long.dropna()
+
+#merge data
+avocado_CA = avocado_CA.merge(housing_long, on=["month", "year", "geography"])
+
+#calculate sales variable based on avg price * total volume of sales
+avocado_CA["sales"] = avocado_CA["average_price"]*avocado_CA["total_volume"]
+
+avocado_CA["log_sales"] = np.log(avocado_CA["sales"])
+```
+
+```{python}
+#visualization
+(ggplot(avocado_CA,
+    aes(
+        x = "log_sales",
+        y = "housing_price"
+    )) +
+    geom_point() +
+    facet_wrap("geography")
+)
+```
+
+*COME BACK TO THIS
