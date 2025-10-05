@@ -15,7 +15,7 @@ import numpy as np
 avocados = pd.read_csv("/Users/donyabehroozi/Documents/gsb544/Data/avocado-updated-2020.csv.zip")
 ```
 
-# 1 - Briefly describe data set
+# 1 - Briefly describe the data set
 ```{python}
 #| output: false
 avocados.head
@@ -234,6 +234,12 @@ avocado_CA_long = avocado_CA_q8.melt(id_vars=["geography", "date", "type"], var_
 
 # 9 - Using outside data
 ```{python}
+#calculate weekly sales
+avocado_CA["sales"] = avocado_CA["average_price"]*avocado_CA["total_volume"]
+
+#make monthly sales variable
+avocado_CA['monthly_sales'] = (avocado_CA.groupby(["month", "year"])['sales'].transform('sum'))
+
 #read in housing data
 housing = pd.read_csv('/Users/donyabehroozi/Downloads/MedianPricesofExistingDetachedHomesHistoricalData(Median Price).csv')
 
@@ -251,22 +257,25 @@ housing_long = housing_long.dropna()
 #merge data
 avocado_CA = avocado_CA.merge(housing_long, on=["month", "year", "geography"])
 
-#calculate sales variable based on avg price * total volume of sales
-avocado_CA["sales"] = avocado_CA["average_price"]*avocado_CA["total_volume"]
-
-avocado_CA["log_sales"] = np.log(avocado_CA["sales"])
+#create average monthly housing price
+avocado_CA['avg_monthly_housing'] = (avocado_CA.groupby(["month", "year"])['housing_price'].transform('mean'))
 ```
 
 ```{python}
 #visualization
 (ggplot(avocado_CA,
     aes(
-        x = "log_sales",
-        y = "housing_price"
+        x = "monthly_sales",
+        y = "avg_monthly_housing"
     )) +
     geom_point() +
-    facet_wrap("geography")
+    geom_smooth(method = "lm") +
+    labs(
+        x = "Average Monthly Sales ($)",
+        y = "Average Monthly Housing ($)",
+        title = "Average Monthly Housing vs. Avocado Monthly Sales"
+    )
 )
 ```
 
-*COME BACK TO THIS
+There appears to be a positive, moderately strong linear relationship between average monthly housing for the given California regions and total monthly sales of avocados. This implies that as avocado sales increase, average housing price tends to increase as well. 
