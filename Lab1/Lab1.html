@@ -6,6 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Donya Behroozi">
 
 <title>Lab 1</title>
 <style>
@@ -2185,6 +2186,12 @@ vertical-align: -.125em;
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Donya Behroozi </p>
+          </div>
+  </div>
     
   
     
@@ -2197,10 +2204,13 @@ vertical-align: -.125em;
 
 <section id="load-in-libraries" class="level1">
 <h1>Load in libraries</h1>
-<div id="bc390d0d" class="cell" data-execution_count="1">
+<div id="2b71af39" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotnine <span class="im">import</span> <span class="op">*</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 <section id="task-1" class="level2">
 <h2 class="anchored" data-anchor-id="task-1">Task 1</h2>
@@ -2208,13 +2218,18 @@ vertical-align: -.125em;
 <li><p>Aesthetics being used include x, y, size, and fill with variables income, life expectancy, population, and four regions mapped to such aesthetics, respectively.</p></li>
 <li><p>Importing <code>q1data.csv</code> dataset:</p></li>
 </ol>
-<div id="584b3078" class="cell" data-execution_count="2">
+<div id="500e0868" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>q1_data <span class="op">=</span> pd.read_csv(<span class="st">&#39;/Users/donyabehroozi/Documents/gsb544/Data/q1data.csv&#39;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 <ol start="3" type="1">
 <li>Recreating plot in Task 1:</li>
 </ol>
-<div id="ef80ece4" class="cell" data-execution_count="3">
+<div id="a6416e62" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>q1_data_nona <span class="op">=</span> q1_data.dropna(subset<span class="op">=</span>[<span class="st">&quot;income&quot;</span>, <span class="st">&quot;life_exp&quot;</span>, <span class="st">&quot;population&quot;</span>, <span class="st">&quot;four_regions&quot;</span>])</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>q1_data_nona <span class="op">=</span> q1_data_nona.sort_values(<span class="st">&quot;population&quot;</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
@@ -2253,6 +2268,7 @@ vertical-align: -.125em;
 <span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>        alpha<span class="op">=</span><span class="fl">0.2</span>, </span>
 <span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span><span class="st">&quot;grey&quot;</span>)</span>
 <span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -2264,7 +2280,9 @@ vertical-align: -.125em;
 <ol start="4" type="1">
 <li>In this scenario, we have three continuous variables (income, life expectancy, and population size) grouped/categorized by the four regions, a categorical variable. Another geometry we can use is <code>geom_line</code>. However, this results in a very poor visualization after faceting by the four regions and adjusting line size for population size. It is very unclear what the relationship between income and life expectancy is especially for smaller values of income. We lose a lot of information in this visualization compared to the one above. Also, <code>geom_line</code> doesn’t seem particularily useful for describing the relationships between these two variables. I would rather use this geometry for comparing a continuous variable with another continuous time-related variable and/or showing trends.</li>
 </ol>
-<div id="de933536" class="cell" data-execution_count="4">
+<div id="8ad1f53a" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>(ggplot(q1_data_nona,</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    aes(</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> <span class="st">&quot;income&quot;</span>,</span>
@@ -2282,6 +2300,7 @@ vertical-align: -.125em;
 <span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        ) <span class="op">+</span></span>
 <span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    theme(figure_size<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>))</span>
 <span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -2297,7 +2316,9 @@ vertical-align: -.125em;
 <li><p>The aesthetics being used include x, y, size, and fill with variables exports, imports, energy use, and four regions, respectively.</p></li>
 <li><p>Importing <code>q2data.csv</code> dataset:</p></li>
 </ol>
-<div id="83e03d93" class="cell" data-execution_count="5">
+<div id="b5c4cca0" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>q2_data <span class="op">=</span> pd.read_csv(<span class="st">&#39;/Users/donyabehroozi/Documents/gsb544/Data/q2data.csv&#39;</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#change energy to float</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>q2_data.loc[q2_data[<span class="st">&quot;energy&quot;</span>] <span class="op">==</span> <span class="st">&quot;12.4k&quot;</span>, <span class="st">&quot;energy&quot;</span>] <span class="op">=</span> <span class="fl">12400.0</span></span>
@@ -2308,11 +2329,14 @@ vertical-align: -.125em;
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">#remove nas</span></span>
 <span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>q2_data_nona <span class="op">=</span> q2_data.dropna(subset<span class="op">=</span>[<span class="st">&quot;exports&quot;</span>, <span class="st">&quot;imports&quot;</span>, <span class="st">&quot;energy&quot;</span>, <span class="st">&quot;four_regions&quot;</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 <ol start="3" type="1">
 <li>Recreating plot in Task 2:</li>
 </ol>
-<div id="979d76c8" class="cell" data-execution_count="6">
+<div id="79e46ce8" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>q2_data_nona <span class="op">=</span> q2_data_nona[q2_data_nona[<span class="st">&quot;energy&quot;</span>] <span class="op">&gt;</span> <span class="dv">0</span>].sort_values(<span class="st">&quot;energy&quot;</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>(ggplot(q2_data_nona,</span>
@@ -2350,6 +2374,7 @@ vertical-align: -.125em;
 <span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>        alpha<span class="op">=</span><span class="fl">0.2</span>, </span>
 <span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span><span class="st">&quot;grey&quot;</span>)</span>
 <span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -2361,7 +2386,9 @@ vertical-align: -.125em;
 <ol start="4" type="1">
 <li>In this scenario, we have three continuous variables (exports, imports, and energy) grouped/categorized by the four regions, a categorical variable. For this task, I explored using <code>geom_text</code> instead of <code>geom_point</code>. The results were similar to the plot above, except the size of the four regions text is defined by a country’s energy usage. This would be an interesting visualization if the data were more spread apart and energy usage was large enough to make the text bigger, but in this case, the output looks messy and it is difficult to gather any insights.</li>
 </ol>
-<div id="629846f6" class="cell" data-execution_count="7">
+<div id="5aa4998a" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>(ggplot(q2_data_nona, </span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    aes(</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> <span class="st">&quot;exports&quot;</span>,</span>
@@ -2380,6 +2407,7 @@ vertical-align: -.125em;
 <span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    theme_bw() <span class="op">+</span></span>
 <span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    theme(figure_size<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>))</span>
 <span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -2395,13 +2423,18 @@ vertical-align: -.125em;
 <li><p>The aesthetics being used here are x, y, size, and fill with variables internet users, GDP per capita, income, and four regions, respectively.</p></li>
 <li><p>Importing <code>q3data.csv</code> dataset:</p></li>
 </ol>
-<div id="287b725e" class="cell" data-execution_count="8">
+<div id="6da40607" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>q3_data <span class="op">=</span> pd.read_csv(<span class="st">&#39;/Users/donyabehroozi/Documents/gsb544/Data/q3data.csv&#39;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 <ol start="3" type="1">
 <li>Recreating plot in Task 3:</li>
 </ol>
-<div id="1481c608" class="cell" data-execution_count="9">
+<div id="49967131" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>q3_data_nonna <span class="op">=</span> q3_data.dropna(subset<span class="op">=</span>[<span class="st">&quot;internet_users&quot;</span>, <span class="st">&quot;gdp&quot;</span>, <span class="st">&quot;income&quot;</span>, <span class="st">&quot;four_regions&quot;</span>])</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>q3_data_nonna <span class="op">=</span> q3_data_nonna.sort_values(<span class="st">&quot;income&quot;</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -2439,6 +2472,7 @@ vertical-align: -.125em;
 <span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>        alpha<span class="op">=</span><span class="fl">0.2</span>, </span>
 <span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>        color<span class="op">=</span><span class="st">&quot;grey&quot;</span>)</span>
 <span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -2450,7 +2484,9 @@ vertical-align: -.125em;
 <ol start="4" type="1">
 <li>In this scenario, we have three continuous variables (internet users, gdp, and income) grouped/categorized by the four regions, a categorical variable. For this task, I decided to turn income into a categorical variable, with low and high income groups (low income if income is less than mean of overall income, high income otherwise). To visualize the relationship between GDP and internet usage, I used <code>geom_smooth</code>. I believe this geometry gives us some interesting insights about the realtionship between internet usage and gdp, but I would be weary about using it without checking linear regression model assumptions. We also only have one observation per country, not a real order to our data. I don’t think that we should interpret these variables as a trend separately for each region. <code>geom_point</code> is more interpretable in this case, as it shows the relationship between GDP and internet usage across the four regions on the same plot. This allows us to see how this relationship may differ between the four regions as a cluster of countries.</li>
 </ol>
-<div id="08a4e2ee" class="cell" data-execution_count="10">
+<div id="9cfce641" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">#change income into binary variable</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">#find mean of income for split point</span></span>
@@ -2461,8 +2497,11 @@ vertical-align: -.125em;
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>q3_data_nonna[<span class="st">&quot;income_group&quot;</span>] <span class="op">=</span> np.where(</span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    q3_data_nonna[<span class="st">&quot;income&quot;</span>] <span class="op">&lt;=</span> <span class="fl">15975.447513812154</span>, <span class="st">&quot;Low&quot;</span>, <span class="st">&quot;High&quot;</span></span>
 <span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
-<div id="0c4dcf9b" class="cell" data-execution_count="11">
+<div id="8145da46" class="cell" data-execution_count="11">
+<details class="code-fold">
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>(ggplot(q3_data_nonna,</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    aes(</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        x <span class="op">=</span> <span class="st">&quot;internet_users&quot;</span>,</span>
@@ -2479,6 +2518,7 @@ vertical-align: -.125em;
 <span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    theme_bw() <span class="op">+</span></span>
 <span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    theme(figure_size<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">5</span>))</span>
 <span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">

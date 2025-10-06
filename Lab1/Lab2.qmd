@@ -130,7 +130,7 @@ print((avocados_major_reg[["month", "total_volume"]].groupby("month").mean().sor
 print((avocados_metro_reg[["month", "total_volume"]].groupby("month").mean().sort_values("total_volume", ascending = False)))
 ```
 
-Month 5, or May, has the highest average volume of avocado sales. We can see that this result holds true across all possible levels of region (major, metro, or total U.S.).
+Month 5, or May, had the highest average volume of avocado sales. This result holds true across all possible levels of region (major, metro, or total U.S.).
 
 # 5 - Which metro area geographical regions sold the most total avocados?
 ```{python}
@@ -167,7 +167,7 @@ avocados_q5_viz = avocados_q5[(avocados_q5["geography"]=="Los Angeles") |
 
 The metro area geographical regions that sold the most total avocados include Los Angeles, New York, Dallas/Ft. Worth, Houston, and Phoenix/Tuscon.
 
-# 6 - From your cleaned data set, create a data set with only these California regions.
+# 6 - From your cleaned data set, create a data set with only the California regions
 
 ```{python}
 avocado_CA = avocados[avocados["geography"].isin(["Los Angeles", "San Diego", "Sacramento", "San Francisco"])]
@@ -196,7 +196,7 @@ avocado_CA_wide.groupby("geography")["diff_in_price"].agg(n = "size", mean = "me
     theme_bw() +
     labs(
         x = "City",
-        y = "Difference in Price (organic - conventional)",
+        y = "Difference in Price (organic - conventional, $)",
         title = "Distribution of Difference in Price by CA City"
     )
 )
@@ -204,7 +204,7 @@ avocado_CA_wide.groupby("geography")["diff_in_price"].agg(n = "size", mean = "me
 
 The price of organic versus conventional avocados is most different for San Francisco, which has the largest average price difference (mean of 0.719 and median of 0.71 over all observed years) compared to the rest of the California regions. However, San Francisco also has the largest standard deviation across all California regions, so we may want to collect more data from recent years to get a larger sample size before solifying our answer.
 
-# 8 - The following plot shows, for all four California regions, the proportion of the average Hass avocado sales that are small, large, or extra large; conventional vs. organic. Recreate the plot.
+# 8 - The following plot shows, for all four California regions, the proportion of the average Hass avocado sales that are small, large, or extra large; conventional vs. organic. Recreate the plot
 ```{python}
 avocado_CA_q8 = avocado_CA[["geography", "date", "type", "small_avo", "large_avo", "extra_large_avo"]] 
 
@@ -228,12 +228,13 @@ avocado_CA_long = avocado_CA_q8.melt(id_vars=["geography", "date", "type"], var_
     theme_bw() +
     theme(axis_text_x=element_text(angle=45, hjust=1)) +
     scale_fill_manual(values = ['#b292d8ff', '#00ba91ff', '#ea7900ff'],
-    labels = ["XL", "Large", "Small"])
+    labels = ["XLarge", "Large", "Small"])
 )
 ```
 
 # 9 - Using outside data
 ```{python}
+#| warning: false
 #calculate weekly sales
 avocado_CA["sales"] = avocado_CA["average_price"]*avocado_CA["total_volume"]
 
@@ -273,9 +274,10 @@ avocado_CA['avg_monthly_housing'] = (avocado_CA.groupby(["month", "year"])['hous
     labs(
         x = "Average Monthly Sales ($)",
         y = "Average Monthly Housing ($)",
-        title = "Average Monthly Housing vs. Avocado Monthly Sales"
-    )
+        title = "Average Monthly Housing vs. Average Avocado Monthly Sales"
+    ) +
+    theme_bw()
 )
 ```
 
-There appears to be a positive, moderately strong linear relationship between average monthly housing for the given California regions and total monthly sales of avocados. This implies that as avocado sales increase, average housing price tends to increase as well. 
+There appears to be a positive, moderately strong linear relationship between average [monthly housing](https://cpslo-my.sharepoint.com/:x:/r/personal/dobehroo_calpoly_edu/_layouts/15/doc2.aspx?sourcedoc=%7B7062E303-AFC9-4AB2-B03F-009CC57F668E%7D&file=MedianPricesofExistingDetachedHomesHistoricalData.xlsx&action=default&mobileredirect=true&wdOrigin=WAC.EXCEL.HOME-BUTTON%2CAPPHOME-WEB.BANNER.UPLOAD&wdPreviousSession=f25990c0-7f16-93ed-a7e0-28a5c054f9da&wdPreviousSessionSrc=Wac&ct=1759606003199) for the given California regions and average monthly sales of avocados. This implies that as avocado sales increase, average housing price tends to increase as well. 

@@ -1,7 +1,9 @@
 ---
 title: "Lab 1"
+author: Donya Behroozi
 format: html
 embed-resources: true
+code-fold: true
 ---
 # Load in libraries
 ```{python}
