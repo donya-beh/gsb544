@@ -1,0 +1,232 @@
+---
+title: "Lab 4"
+author: "Donya Behroozi"
+format: html
+embed-resources: true
+code-fold: true
+---
+# 1. Data from unstructured websites
+
+## Load necessary libraries
+```{python}
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+import re
+from plotnine import *
+```
+
+## Scrape data
+Read in HTML from URL using `requests` library.
+```{python}
+URL = "https://tastesbetterfromscratch.com/meal-plan-142/"
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+
+response = requests.get(URL, headers=HEADERS)
+```
+
+Use Beautiful Soup to parse into a tree.
+```{python}
+soup = BeautifulSoup(response.text, "html.parser")
+```
+
+Find all recipe blocks.
+```{python}
+recipes = soup.find_all("p", class_ = "has-text-align-left")
+recipes
+```
+
+## Create columns of data frame
+```{python}
+rows = []
+for i in soup.find_all("p", class_ = "has-text-align-left"):
+
+    # day of week
+    day_string = i.text
+    day = "".join(re.findall(r"\w+(?=: )", day_string))
+
+    # name of recipe
+    name_tag = i.find("a")
+    name = name_tag.text
+
+    # link to recipe
+    link_tag = i.find("a")
+    link = link_tag.get("href")
+
+    # price of recipe
+    price = "".join(re.findall(r"\d+.\d{2}", day_string))
+
+    # append the data
+    rows.append({
+        "Day of the Week": day,
+        "Name of Recipe": name,
+        "Link to Recipe": link,
+        "Price of Recipe": price
+    })
+
+meals_data = pd.DataFrame(rows)
+meals_data
+```
+
+# 2. Data from an API
+```{python}
+import requests
+
+url = "https://tasty.p.rapidapi.com/recipes/list"
+
+querystring = {"from":"0","size":"100","q":"Meatballs"}
+
+headers = {
+	"x-rapidapi-key": "a638670f82msh50c4d1549283208p17344djsnc360496a27fd",
+	"x-rapidapi-host": "tasty.p.rapidapi.com"
+}
+
+response = requests.get(url, headers=headers, params=querystring)
+
+print(response.json())
+meatball_recipes = pd.json_normalize(response.json(), "results")
+meatball_recipes
+```
+
+Note: Meatballs Arrabbiata was not a recipe found on the Tasty website. For the purposes of showing that my code works, I have matched any meatball recipes in general. However, for the function in the next step, I will be using the exact recipe names.
+
+# 3. Automate it
+```{python}
+# function that scrapes meal plan data
+def get_weekly_plan(plan_num):
+    URL = "https://tastesbetterfromscratch.com/meal-plan-{}/".format(plan_num)
+    HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+
+    response = requests.get(URL, headers=HEADERS)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    rows = []
+
+    for i in soup.find_all("p", class_ = "has-text-align-left"):
+        # day of week
+        day_string = i.text
+        day = "".join(re.findall(r"\w+(?=: )", day_string))
+
+        # name of recipe
+        name_tag = i.find("a")
+        name = name_tag.text
+
+        # link to recipe
+        link_tag = i.find("a")
+        link = link_tag.get("href")
+
+        # price of recipe
+        price = "".join(re.findall(r"\d+.\d{2}", day_string))
+
+        # append the data
+        rows.append({
+            "Day of the Week": day,
+            "Name of Recipe": name,
+            "Link to Recipe": link,
+            "Price of Recipe": price
+        })
+
+    meals_data = pd.DataFrame(rows)
+    meals_data
+    return meals_data
+
+get_weekly_plan(202)
+
+# function that searches tasty API for matching recipes
+def match_recipe(search_name):
+    url = "https://tasty.p.rapidapi.com/recipes/list"
+
+    querystring = {"from":"0","size":"100","q":"{}".format(search_name)}
+
+    headers = {
+	    "x-rapidapi-key": "a638670f82msh50c4d1549283208p17344djsnc360496a27fd",
+	    "x-rapidapi-host": "tasty.p.rapidapi.com"
+    }
+
+    response = requests.get(url, headers=headers, params=querystring)
+
+    tasty_recipes = pd.json_normalize(response.json(), "results")
+    return tasty_recipes
+
+# combine functions together
+def get_mealplan_data(num):
+    weekly_plan_data = get_weekly_plan(num)
+    
+    #loop through each recipe in weekly meal plan data and find tasty data
+    rows = []
+    for _, row in weekly_plan_data.iterrows():
+        tasty_table = match_recipe(row["Name of Recipe"])
+        if tasty_table is None or tasty_table.empty:
+            tasty_table = pd.DataFrame({"Tasty Recipe": [pd.NA]})
+        else:
+            # rename for display; keep all other Tasty columns
+            tasty_table = tasty_table.rename(columns={"name": "Tasty Recipe"})
+        tasty_table.insert(0, "Price of Recipe", row["Price of Recipe"])
+        tasty_table.insert(0, "Link to Recipe",  row["Link to Recipe"])
+        tasty_table.insert(0, "Name of Recipe",  row["Name of Recipe"])
+        tasty_table.insert(0, "Day of the Week",   row["Day of the Week"])
+        rows.append(tasty_table)
+    complete_table = pd.concat(rows, ignore_index = True)
+    return complete_table
+
+df = get_mealplan_data(202)
+df.head
+```
+
+# 4. Add a column with fuzzy matching
+```{python}
+#all possible meats
+pattern = (
+    r"\b("
+    r"[Bb]eef|[Ss]teak|[Vv]eal|[Ll]amb|[Mm]utton|[Gg]oat|[Vv]enison|"
+    r"[Pp]ork|[Bb]acon|[Hh]am|[Pp]rosciutto|[Ss]alami|[Ss]ausage|"
+    r"[Cc]horizo|[Pp]epperoni|[Mm]eatball|[Bb]risket|[Rr]ibs|"
+    r"[Pp]astrami|[Cc]orned [Bb]eef|[Cc]hicken|[Tt]urkey|[Dd]uck|"
+    r"[Gg]oose|[Qq]uail|[Hh]en|[Rr]ooster|[Pp]heasant|"
+    r"[Ff]ish|[Ss]almon|[Tt]una|[Cc]od|[Hh]addock|[Tt]rout|"
+    r"[Tt]ilapia|[Hh]alibut|[Cc]atfish|[Ss]napper|[Mm]ahi [Mm]ahi|"
+    r"[Ss]ardine|[Aa]nchovy|[Bb]ass|[Ss]hrimp|[Pp]rawn|[Cc]rab|"
+    r"[Ll]obster|[Cc]lam|[Mm]ussel|[Oo]yster|[Ss]callop|[Ss]quid|"
+    r"[Cc]alamari|[Oo]ctopus|[Hh]ot [Dd]og|[Jj]erky|[Bb]ologna|"
+    r"[Mm]ortadella|[Pp]ancetta|[Kk]ielbasa|[Ss]pam"
+    r")\b"
+)
+
+df['Veg'] = df["Name of Recipe"].apply(lambda x: "Not Vegetarian" if re.findall(pattern, x) else "Vegetarian")
+```
+
+
+
+# 5. 
+```{python}
+#calculate nutrition as calories
+df["Carbs"] = (df["nutrition.carbohydrates"]*4)
+df["Fat"] = (df["nutrition.fat"]*9)
+df["Fiber"] = (df["nutrition.fiber"]*2)
+df["Protein"] = (df["nutrition.protein"]*4)
+df["Sugar"] = (df["nutrition.sugar"]*4)
+
+#summarize nutrition facts over all tasty recipes
+summary = df[["Name of Recipe", "Veg", "Carbs", "Fat", "Fiber", "Protein", "Sugar"]].groupby(["Name of Recipe", "Veg"]).mean().reset_index().rename(columns={"Veg": "Vegetarian"})
+
+recipe_order = ["Chicken Divan","Beef Noodle Soup","Stuffed Shells","Vegetarian Stuffed Peppers","Chicken Gyros"]
+summary["Name of Recipe"] = pd.Categorical(
+    summary["Name of Recipe"], categories=recipe_order)
+
+long_summary = summary.melt(id_vars=["Name of Recipe", "Vegetarian"], var_name = "Nutrient", value_name = "Calories").dropna()
+
+(ggplot(long_summary,
+    aes(
+        x = "Name of Recipe",
+        y = "Calories",
+        fill = "Nutrient"
+    ))
+    +
+    geom_bar(stat = "identity", position = "stack") +
+    labs(title = "Nutrition Information Per Recipe") +
+    theme_bw() +
+    theme(axis_text_x=element_text(rotation=45, ha='right'))
+)
+```
+
+Note: No recipes were found in the Tasty search for Chicken Divan.
