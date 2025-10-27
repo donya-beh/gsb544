@@ -83,15 +83,13 @@ headers = {
 
 response = requests.get(url, headers=headers, params=querystring)
 
-print(response.json())
 meatball_recipes = pd.json_normalize(response.json(), "results")
-meatball_recipes
+meatball_recipes.head()
 ```
-
-Note: Meatballs Arrabbiata was not a recipe found on the Tasty website. For the purposes of showing that my code works, I have matched any meatball recipes in general. However, for the function in the next step, I will be using the exact recipe names.
 
 # 3. Automate it
 ```{python}
+#| output: false
 # function that scrapes meal plan data
 def get_weekly_plan(plan_num):
     URL = "https://tastesbetterfromscratch.com/meal-plan-{}/".format(plan_num)
@@ -170,7 +168,6 @@ def get_mealplan_data(num):
     return complete_table
 
 df = get_mealplan_data(202)
-df.head
 ```
 
 # 4. Add a column with fuzzy matching
@@ -193,6 +190,7 @@ pattern = (
 )
 
 df['Veg'] = df["Name of Recipe"].apply(lambda x: "Not Vegetarian" if re.findall(pattern, x) else "Vegetarian")
+df.head()
 ```
 
 
@@ -225,8 +223,9 @@ long_summary = summary.melt(id_vars=["Name of Recipe", "Vegetarian"], var_name =
     geom_bar(stat = "identity", position = "stack") +
     labs(title = "Nutrition Information Per Recipe") +
     theme_bw() +
-    theme(axis_text_x=element_text(rotation=45, ha='right'))
+    theme(axis_text_x=element_text(rotation=45, ha='right')) +
+    facet_wrap("Vegetarian")
 )
 ```
 
-Note: No recipes were found in the Tasty search for Chicken Divan.
+Note: No recipes were found in the Tasty search for Chicken Divan, so this visualization starts at Tuesday's recipe: Beef Noodle Soup.
