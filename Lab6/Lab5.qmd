@@ -1,0 +1,49 @@
+---
+title: "Lab 6"
+author: "Donya Behroozi"
+embed-resources: true
+code-fold: true
+format: html
+---
+
+## Load libraries and read in data
+```{python}
+import pandas as pd
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.compose import make_column_selector, ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import r2_score
+
+baseball = pd.read_csv("/Users/donyabehroozi/Downloads/Hitters.csv")
+baseball.head()
+```
+
+
+## Clean data
+
+First, let's check our variable types:
+```{python}
+baseball.dtypes
+```
+
+The variable types appear to be as expected given the data description.
+
+Now, check for missing variables:
+```{python}
+baseball.isna().sum()
+```
+
+There are 59 missing salaries. I will drop these values from the data frame.
+```{python}
+baseball = baseball.dropna()
+baseball.shape[0]
+```
+
+Our data frame now has 322 - 59 = 263 observations.
+
+## Part 1: Different Model Specs
+
+# A. Regression without regularization

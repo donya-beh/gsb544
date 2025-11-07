@@ -1,0 +1,798 @@
+---
+title: "Lab 5"
+author: "Donya Behroozi"
+embed-resources: true
+code-fold: true
+format: html
+---
+# Import libraries
+```{python}
+import pandas as pd
+from plotnine import *
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, root_mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+```
+
+# Part One: Data Exploration
+
+1. Read in the dataset, and display some summaries of the data
+
+**Read in data**
+```{python}
+insurance = pd.read_csv("https://www.dropbox.com/s/bocjjyo1ehr5auz/insurance_costs_1.csv?dl=1")
+```
+
+**Summaries of data**
+
+Histogram of age:
+```{python}
+(ggplot(insurance,
+aes(
+  x = "age"
+))
++ geom_histogram(bins = 15, fill = "#099faf")
++ labs(x = "Age (years)", y = "Count", title = "Distribution of Age")
++ theme_bw()
+)
+```
+
+Frequency of sex:
+```{python}
+(ggplot(insurance,
+aes(
+  x = "sex",
+  fill = "sex"
+))
++ geom_bar()
++ labs(x = "Sex", y = "Count", title = "Frequency of Sex")
++ theme_bw()
+)
+```
+
+Histogram of BMI:
+```{python}
+(ggplot(insurance,
+aes(
+  x = "bmi"
+))
++ geom_histogram(bins = 15, fill = "#099faf")
++ labs(x = "BMI", y = "Count", title = "Distribution of BMI")
++ theme_bw()
+)
+```
+
+Frequency of smoking status:
+```{python}
+(ggplot(insurance,
+aes(
+  x = "smoker",
+  fill = "smoker"
+))
++ geom_bar()
++ labs(x = "Smoker", y = "Count", title = "Frequency of Smoking Status")
++ theme_bw()
+)
+```
+
+Frequency of region:
+```{python}
+(ggplot(insurance,
+aes(
+  x = "region",
+  fill = "region"
+))
++ geom_bar()
++ labs(x = "Region", y = "Count", title = "Frequency of Region")
++ theme_bw()
+)
+```
+
+Histogram of medical costs:
+```{python}
+(ggplot(insurance,
+aes(
+  x = "charges"
+))
++ geom_histogram(bins = 15, fill = "#099faf")
++ labs(x = "Charges ($)", y = "Count", title = "Distribution of Medical Charges")
++ theme_bw()
+)
+```
+
+2. Fix any concerns you have about the data.
+
+**Look for missing data**
+```{python}
+print(insurance.isna().sum())
+```
+
+There appears to be no missing data.
+
+**Check variable types**
+```{python}
+print(insurance.dtypes)
+```
+
+The variable types are as expected, but we should transform the categorical variables sex, smoker, and region into dummy variables so we can use them in our regression analysis.
+
+```{python}
+insurance_analysis = pd.get_dummies(insurance)*1
+insurance_analysis.head()
+```
+
+3. Make up to three plots comparing the response variable (charges) to one of the predictor variables. Briefly discuss each plot.
+
+First, I am going to make a new variable that contains the log transformed values of medical charges, as this variable's distribution was highly skewed. This allows for improvement in our predictions later when we do analysis and better interpretability in terms of scatter plots.
+
+```{python}
+insurance["log_charges"] = np.log(insurance["charges"])
+insurance_analysis["log_charges"] = np.log(insurance_analysis["charges"])
+insurance.head()
+```
+
+**Charges vs. Sex**
+```{python}
+(ggplot(insurance,
+aes(
+    x = "sex",
+    y = "charges",
+    fill = "sex"
+))
++ geom_col()
++ labs(x = "Sex", y = "Charges ($)", title = "Medical Charges by Sex")
++ theme_bw()
+)
+```
+
+
+**Log(Charges) vs. BMI**
+```{python}
+(ggplot(insurance,
+aes(
+    x = "bmi",
+    y = "log_charges"
+))
++ geom_point()
++ labs(x = "BMI", y = "Log(Charges)", title = "Log(Medical Charges) vs. BMI")
++ theme_bw()
+)
+```
+
+**Charges vs. Smoking Status**
+```{python}
+(ggplot(insurance,
+aes(
+    x = "smoker",
+    y = "charges",
+    fill = "smoker"
+))
++ geom_col()
++ labs(x = "Smoker", y = "Charges ($)", title = "Medical Charges by Smoking Status")
++ theme_bw()
+)
+```
+
+**Observations:**
+
+- Medical charges by sex: It appears that medical charges are slightly higher for females than males.
+
+- Log(Medical Charges) vs. BMI: It is hard to tell at this point whether there is any visible relationship between medical charges and BMI, but it appears that there may be a very slight, weak positive relationship.
+
+- Medical charges by smoking status: It appears that medical charges are slightly higher for individuals that smoke than those who do not smoke.
+
+# Part Two: Simple Linear Models
+
+1. Construct a simple linear model to predict the insurance charges from the beneficiary’s age. Discuss the model fit, and interpret the coefficient estimates.
+
+```{python}
+X_train=insurance_analysis[["age"]]
+y_train=insurance_analysis["log_charges"]
+#declare model
+linear_model1 = LinearRegression()
+
+#fit the model to the data
+linear_model1.fit(
+    X=X_train,
+    y=y_train
+)
+
+#make predictions
+y_train_ = linear_model1.predict(X=X_train)
+
+#obtain coefficient estimates
+print(linear_model1.coef_, linear_model1.intercept_, mean_squared_error(y_train, y_train_), root_mean_squared_error(y_train, y_train_), y_train.std(), r2_score(y_train, y_train_))
+```
+
+**Model equation**
+
+$\widehat{log(charges)} = 7.554 + 0.036(age)$
+
+**Estimated coefficient interpretations**
+
+- Intercept: At age 0 (birth), medical charges are expected to be approximately $1,908.361.
+
+- Age: For each 1 year increase in age, medical charges are expected to increase by 3.6%. 
+
+**Model fit**
+
+- RMSE = 0.860: Predicting medical charges with age cuts down our error by 1.045 - 0.860 = 0.184 units.
+
+- R-squared = 0.321: Approximately 32.1% of the variation in log(medical charges) is explained by this simple linear regression model that includes age as the predictor.
+
+2. Make a model that also incorporates the variable sex. Report your results.
+```{python}
+X_train=insurance_analysis[["age", "sex_female"]]
+y_train=insurance_analysis["log_charges"]
+#declare model
+linear_model2 = LinearRegression()
+
+#fit the model to the data
+linear_model2.fit(
+    X=X_train,
+    y=y_train
+)
+
+#make predictions
+y_train_ = linear_model2.predict(X=X_train)
+
+#obtain coefficient estimates
+print(linear_model2.coef_, linear_model2.intercept_, mean_squared_error(y_train, y_train_), root_mean_squared_error(y_train, y_train_), y_train.std(), r2_score(y_train, y_train_))
+```
+
+**Model equation**
+
+$\widehat{log(charges)} = 7.537 + 0.036(age) + 0.032(sexFemale)$
+
+**Estimated coefficient interpretations**
+
+- Intercept: At age 0 (birth), medical charges are expected to be approximately $1,876.193 for males.
+
+- Age: For each 1 year increase in age, medical charges are expected to increase by 3.6%, holding sex constant.
+
+- Sex: Medical costs are expected to be 3.2% more expensive for females than for males, holding age constant.
+
+**Model fit**
+
+- RMSE = 0.860: Predicting medical charges with age cuts down our error by 0.184 units.
+
+- R-squared = 0.321: Approximately 32.1% of the variation in log(medical charges) is explained by this simple linear regression model that includes age and sex as the predictors.
+
+3. Now make a model that does not include sex, but does include smoker. Report your results.
+```{python}
+X_train=insurance_analysis[["age", "smoker_yes"]]
+y_train=insurance_analysis["log_charges"]
+#declare model
+linear_model3 = LinearRegression()
+
+#fit the model to the data
+linear_model3.fit(
+    X=X_train,
+    y=y_train
+)
+
+#make predictions
+y_train_ = linear_model3.predict(X=X_train)
+
+#obtain coefficient estimates
+print(linear_model3.coef_, linear_model3.intercept_, mean_squared_error(y_train, y_train_), root_mean_squared_error(y_train, y_train_), y_train.std(), r2_score(y_train, y_train_))
+```
+
+**Model equation**
+
+$\widehat{log(charges)} = 7.132 + 0.038(age) + 1.755(smokerYes)$
+
+**Estimated coefficient interpretations**
+
+- Intercept: At age 0 (birth), medical charges are expected to be approximately $1,251.377 for non-smokers.
+
+- Age: For each 1 year increase in age, medical charges are expected to increase by 3.8%, holding smoking status constant.
+
+- Smoker: Medical costs are expected to be 175.5% more expensive for smokers than for non-smokers, holding age constant.
+
+**Model fit**
+
+- RMSE = 0.494: Predicting medical charges with age cuts down our error by 1.045 - 0.494 = 0.551 units.
+
+- R-squared = 0.776: Approximately 77.6% of the variation in log(medical charges) is explained by this simple linear regression model that includes age and smoking status as the predictors.
+
+4. Which model (Q2 or Q3) do you think better fits the data? Justify your answer by calculating the MSE for each model, and also by comparing R-squared values.
+
+**Q2 MSE and R-squared**
+
+- MSE = 0.739
+
+- R-squared = 0.321
+
+**Q3 MSE and R-squared**
+
+- MSE = 0.244
+
+- R-squared = 0.776
+
+Given that the MSE for the model in Q3 is smaller and the R-squared is larger than that of the model in Q2, Q3 better fits the data.
+
+# Part Three: Multiple Linear Models
+
+1. Fit a model that uses age and bmi as predictors. Report your results. How does the MSE compare to the model in Part Two Q1? How does the R-squared compare?
+
+```{python}
+X_train=insurance_analysis[["age", "bmi"]]
+y_train=insurance_analysis["log_charges"]
+#declare model
+linear_model4 = LinearRegression()
+
+#fit the model to the data
+linear_model4.fit(
+    X=X_train,
+    y=y_train
+)
+
+#make predictions
+y_train_ = linear_model4.predict(X=X_train)
+
+#obtain coefficient estimates
+print(linear_model4.coef_, linear_model4.intercept_, mean_squared_error(y_train, y_train_), root_mean_squared_error(y_train, y_train_), y_train.std(), r2_score(y_train, y_train_))
+```
+
+**Model equation**
+
+$\widehat{log(charges)} = 7.172 + 0.036(age) + 0.013(bmi)$
+
+**Estimated coefficient interpretations**
+
+- Intercept: At age 0 (birth) and BMI 0, medical charges are expected to be approximately $1,302.447.
+
+- Age: For each 1 year increase in age, medical charges are expected to increase by 3.6%, holding BMI constant. 
+
+- BMI: For each 1 unit increase in BMI, medical charges are expected to increase by 1.3%, holding age constant. 
+
+**Model fit**
+
+- RMSE = 0.857: Predicting medical charges with age cuts down our error by 1.045 - 0.857 = 0.188 units.
+
+- R-squared = 0.327: Approximately 32.7% of the variation in log(medical charges) is explained by this simple linear regression model that includes age and BMI as the predictors.
+
+**Comparison to model in part two Q1**
+
+The MSE for the model that includes age and BMI is slightly smaller than that of the model that just includes age in part two of Q1 (0.734<0.740). The model that includes age and BMI explains slightly more variation in log(medical charges) than the model that just includes age (32.7%>32.1%). 
+
+2. Perhaps the relationships are not linear. Fit a model that uses age and age^2 as predictors. How do the MSE and R-squared compare to the model in P2 Q1?
+
+First, let's create the age^2 variable and add that to our data frame.
+```{python}
+insurance_analysis["age_square"] = insurance_analysis["age"]**2
+insurance_analysis.head()
+```
+
+Now, we can run the polynomial regression analysis.
+```{python}
+X_train=insurance_analysis[["age", "age_square"]]
+y_train=insurance_analysis["log_charges"]
+#declare model
+polynomial_model1 = LinearRegression()
+
+#fit the model to the data
+polynomial_model1.fit(
+    X=X_train,
+    y=y_train
+)
+
+#make predictions
+y_train_ = polynomial_model1.predict(X=X_train)
+
+#obtain coefficient estimates
+print(polynomial_model1.coef_, polynomial_model1.intercept_, mean_squared_error(y_train, y_train_), root_mean_squared_error(y_train, y_train_), y_train.std(), r2_score(y_train, y_train_))
+```
+
+**Comparison to model in part two Q1**
+
+The MSE for the model that includes age and age squared is smaller than that of the model that just includes age in part two of Q1 (0.729<0.740). The model that includes age and age squared explains slightly more variation in log(medical charges) than the model that just includes age (33.1%>32.1%). 
+
+3. Fit a polynomial model of degree 4. How do the MSE and R-squared compare to the model in P2 Q1?
+
+First, let's create the age^3 and age^4 variable and add that to our data frame.
+```{python}
+insurance_analysis["age_cubed"] = insurance_analysis["age"]**3
+insurance_analysis["age_pwr_four"] = insurance_analysis["age"]**4
+insurance_analysis.head()
+```
+
+Now, we can run the polynomial regression analysis.
+```{python}
+X_train=insurance_analysis[["age", "age_square", "age_cubed", "age_pwr_four"]]
+y_train=insurance_analysis["log_charges"]
+
+#declare model
+polynomial_model2 = LinearRegression()
+
+#fit the model to the data
+polynomial_model2.fit(
+    X=X_train,
+    y=y_train
+)
+
+#make predictions
+y_train_ = polynomial_model2.predict(X=X_train)
+
+#obtain coefficient estimates
+print(polynomial_model2.coef_, polynomial_model2.intercept_, mean_squared_error(y_train, y_train_), root_mean_squared_error(y_train, y_train_), y_train.std(), r2_score(y_train, y_train_))
+```
+
+**Comparison to model in part two Q1**
+
+The MSE for the 4th degree polynomial of age is smaller than that of the model that just includes age in part two of Q1 (0.725<0.740). The 4th degree polynomial of age explains more variation in log(medical charges) than the model that just includes age (33.5%>32.1%). 
+
+4. Fit a polynomial model of degree 12. How do the MSE and R-squared compare to the model in P2 Q1?
+
+First, let's create the age^5 through age^12 variables and add that to our data frame.
+```{python}
+insurance_analysis["age_pwr_five"] = insurance_analysis["age"]**5
+insurance_analysis["age_pwr_six"] = insurance_analysis["age"]**6
+insurance_analysis["age_pwr_seven"] = insurance_analysis["age"]**7
+insurance_analysis["age_pwr_eight"] = insurance_analysis["age"]**8
+insurance_analysis["age_pwr_nine"] = insurance_analysis["age"]**9
+insurance_analysis["age_pwr_ten"] = insurance_analysis["age"]**10
+insurance_analysis["age_pwr_eleven"] = insurance_analysis["age"]**11
+insurance_analysis["age_pwr_twelve"] = insurance_analysis["age"]**12
+insurance_analysis.head()
+```
+
+Now, we can run the polynomial regression analysis.
+```{python}
+X_train=insurance_analysis[["age", "age_square", "age_cubed", "age_pwr_four", "age_pwr_five", "age_pwr_six", "age_pwr_seven", "age_pwr_eight", "age_pwr_nine", "age_pwr_ten", "age_pwr_eleven", "age_pwr_twelve"]]
+y_train=insurance_analysis["log_charges"]
+
+#declare model
+polynomial_model3 = LinearRegression()
+
+#fit the model to the data
+polynomial_model3.fit(
+    X=X_train,
+    y=y_train
+)
+
+#make predictions
+y_train_ = polynomial_model3.predict(X=X_train)
+
+#obtain coefficient estimates
+print(polynomial_model3.coef_, polynomial_model3.intercept_, mean_squared_error(y_train, y_train_), root_mean_squared_error(y_train, y_train_), y_train.std(), r2_score(y_train, y_train_))
+```
+
+**Comparison to model in part two Q1**
+
+The MSE for the 12th degree polynomial of age is smaller than that of the model that just includes age in part two of Q1 (0.725<0.740). The 12th degree polynomial of age explains more variation in log(medical charges) than the model that just includes age (33.5%>32.1%). 
+
+5. According to the MSE and R-squared, which is the best model? Do you agree that this is indeed the “best” model? Why or why not?
+
+According to the MSE and R-squared, the degree 4 polynomial model of age is the "best" model due to having the smallest mean square error and largest R-squared value across all the models. I would not agree that this is indeed the "best" model for a couple of reasons. One, R-squared only goes up as we add more predictors to our model so this goodness of fit measure is unreliable for this problem. Two, we are only making predictions for log(medical charges) using the training data based on a model that was fit on the same data. To truly assess the predictive performance of our model, we should perform model validation (fit the model on one partition of our data, then make predictions and assess performance on the other).
+
+6. Plot the predictions from your model in Q4 as a line plot on top of the scatterplot of your original data.
+
+```{python}
+X_new = pd.DataFrame()
+X_new["age"] = np.linspace(15, 65, num=1000)
+X_new["age_square"] = X_new["age"]**2
+X_new["age_cubed"] = X_new["age"]**3
+X_new["age_pwr_four"] = X_new["age"]**4
+X_new["age_pwr_five"] = X_new["age"]**5
+X_new["age_pwr_six"] = X_new["age"]**6
+X_new["age_pwr_seven"] = X_new["age"]**7
+X_new["age_pwr_eight"] = X_new["age"]**8
+X_new["age_pwr_nine"] = X_new["age"]**9
+X_new["age_pwr_ten"] = X_new["age"]**10
+X_new["age_pwr_eleven"] = X_new["age"]**11
+X_new["age_pwr_twelve"] = X_new["age"]**12
+
+y_new_ = polynomial_model3.predict(X_new)
+line_best_fit = pd.DataFrame({"age": X_new["age"].values, "predicted":y_new_})
+
+(ggplot(insurance_analysis,
+aes(
+  x = "age",
+  y = "log_charges"
+))
++ geom_point()
++ geom_line(line_best_fit, aes(x = "age", y = "predicted"))
++ labs(x = "Age", y = "Log(Medical Charges)", title = "Log(Medical Charges) vs. Age")
++ theme_bw()
+)
+```
+
+# Part Four: New data
+
+**Read in new dataset:**
+```{python}
+new_insurance = pd.read_csv("https://www.dropbox.com/s/sky86agc4s8c6qe/insurance_costs_2.csv?dl=1")
+new_insurance = pd.get_dummies(new_insurance)*1
+new_insurance["log_charges"] = np.log(new_insurance["charges"])
+new_insurance.head()
+```
+
+**Transform both training and validation data sets to account for interaction terms**
+```{python}
+#age and smoker interaction
+insurance_analysis["age_smokerYes"] = insurance_analysis["age"]*insurance_analysis["smoker_yes"]
+new_insurance["age_smokerYes"] = new_insurance["age"]*new_insurance["smoker_yes"]
+
+#bmi and smoker interaction
+insurance_analysis["bmi_smokerYes"] = insurance_analysis["bmi"]*insurance_analysis["smoker_yes"]
+new_insurance["bmi_smokerYes"] = new_insurance["bmi"]*new_insurance["smoker_yes"]
+```
+
+**Fit models**
+```{python}
+y_train = insurance_analysis["log_charges"]
+y_test = new_insurance["log_charges"]
+
+models = {
+    "Model 1": ['age'],
+    "Model 2": ['age', 'bmi'],
+    "Model 3": ['age', 'bmi', 'smoker_yes'],
+    "Model 4": ['age', 'bmi', 'age_smokerYes', 'bmi_smokerYes'],
+    "Model 5": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes']
+
+}
+
+rows = []
+for name, Xcols in models.items():
+    X = insurance_analysis[Xcols] #uses training data for X columns and obtains columns of interest given the model
+    model = LinearRegression().fit(X, y_train) #fits model based on training data
+    y_test_ = model.predict(new_insurance[Xcols]) #predicts values of y in test data
+    new_insurance[f"{name}_predict"] = y_test_
+    test_mse = mean_squared_error(y_test, y_test_)
+    adj_rsq = r2_score(y_test, y_test_)
+    rows.append({"Model": name, "Test MSE": test_mse, "Adj. R-squared":adj_rsq})
+
+test_error = pd.DataFrame(rows)
+test_error
+```
+
+According to each models' MSE values, the best model to use is the one using age, bmi, smoking status, and the interaction between age and smoking status and bmi and smoking status as predictors (model five).
+
+**Plot of final chosen model**
+
+First let's calculate the residuals and add this to our data frame:
+```{python}
+new_insurance["resid_mdl_5"] = new_insurance["log_charges"] - new_insurance["Model 5_predict"]
+new_insurance.head()
+```
+
+Now we can plot the residuals vs. fitted (predicted) values:
+```{python}
+(ggplot(new_insurance,
+aes(
+  x = "Model 5_predict",
+  y = "resid_mdl_5"
+))
++ geom_point()
++ labs(x = "Model 5 Predictions", y = "Model 5 Residuals", title = "Residuals vs. Fitted")
++ theme_bw()
+)
+```
+
+# Part Five: Full Exploration
+
+**Start with strongest model from previous part**
+
+In part 4, we already found that the strongest model thus far is the model that includes age, bmi, smoking status, and the interaction between age and smoking status and bmi and smoking status as predictors. We can explore adding polynomial terms and/or more variables to this model to determine whether adding complexity provides meaningful improvement to the model.
+
+First let's try adding additional variables to our model:
+```{python}
+y_train = insurance_analysis["log_charges"]
+y_test = new_insurance["log_charges"]
+
+models = {
+    # original
+    "Model 5": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes'],
+    # add sex
+    "Model 6": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female'],
+    # add region
+    "Model 7": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes','region_northeast', 'region_northwest', 'region_southeast'],
+    # add sex and region
+    "Model 8": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'region_northeast', 'region_northwest', 'region_southeast']
+}
+
+rows = []
+for name, Xcols in models.items():
+    X = insurance_analysis[Xcols] #uses training data for X columns and obtains columns of interest given the model
+    model = LinearRegression().fit(X, y_train) #fits model based on training data
+    y_test_ = model.predict(new_insurance[Xcols]) #predicts values of y in test data
+    y_train_ = model.predict(insurance_analysis[Xcols]) #predicts values of y in train data
+    new_insurance[f"{name}_predict"] = y_test_
+    train_mse = mean_squared_error(y_train, y_train_)
+    test_mse = mean_squared_error(y_test, y_test_)
+    adj_rsq = r2_score(y_test, y_test_)
+    rows.append({"Model": name, "Train MSE": train_mse, "Test MSE": test_mse, "Adj. R-squared":adj_rsq})
+
+test_error = pd.DataFrame(rows)
+df_error_long = test_error[["Model", "Train MSE", "Test MSE"]].melt(id_vars=["Model"], value_name = "MSE", var_name = "type")
+
+(ggplot(df_error_long,
+        aes(x = "Model",
+            y = "MSE",
+            color = "type")) +
+ geom_point()
++ labs(title = "Model Test and Train MSE")
++ theme_bw()
+)
+```
+
+It appears that adding the sex variable (model six) to our model improves the model's fit on the new data. Therefore, we will use this model going forward. Now, we can explore adding interaction terms between age, sex, and bmi.
+
+First we need to define our interaction terms in the data sets:
+```{python}
+insurance_analysis["age_sexFemale"] = insurance_analysis["age"]*insurance_analysis["sex_female"]
+insurance_analysis["bmi_sexFemale"] = insurance_analysis["bmi"]*insurance_analysis["sex_female"]
+
+new_insurance["age_sexFemale"] = new_insurance["age"]*new_insurance["sex_female"]
+new_insurance["bmi_sexFemale"] = new_insurance["bmi"]*new_insurance["sex_female"]
+```
+
+Now we can add these interaction terms to our models:
+```{python}
+y_train = insurance_analysis["log_charges"]
+y_test = new_insurance["log_charges"]
+
+models = {
+    # original
+    "Model 6": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female'],
+    # add age*sex
+    "Model 7": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'age_sexFemale'],
+    # add bmi*sex
+    "Model 8": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'bmi_sexFemale'],
+    # add age*sex and bmi*sex
+    "Model 9": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'age_sexFemale', 'bmi_sexFemale']
+}
+
+rows = []
+for name, Xcols in models.items():
+    X = insurance_analysis[Xcols] #uses training data for X columns and obtains columns of interest given the model
+    model = LinearRegression().fit(X, y_train) #fits model based on training data
+    y_test_ = model.predict(new_insurance[Xcols]) #predicts values of y in test data
+    y_train_ = model.predict(insurance_analysis[Xcols]) #predicts values of y in train data
+    new_insurance[f"{name}_predict"] = y_test_
+    train_mse = mean_squared_error(y_train, y_train_)
+    test_mse = mean_squared_error(y_test, y_test_)
+    adj_rsq = r2_score(y_test, y_test_)
+    rows.append({"Model": name, "Train MSE": train_mse, "Test MSE": test_mse, "Adj. R-squared":adj_rsq})
+
+test_error = pd.DataFrame(rows)
+df_error_long = test_error[["Model", "Train MSE", "Test MSE"]].melt(id_vars=["Model"], value_name = "MSE", var_name = "type")
+
+(ggplot(df_error_long,
+        aes(x = "Model",
+            y = "MSE",
+            color = "type")) +
+ geom_point()
++ labs(title = "Model Test and Train MSE")
++ theme_bw()
+)
+```
+
+Given the above plot, model seven with the age and sex interaction variable appears to have the lowest test MSE. Model nine with age and sex and bmi and sex interaction variables has a similar test MSE, but I would like to avoid making my final model too complex so I will move forward with model seven. 
+
+Finally, we can explore whether adding polynomial terms for age and bmi improves the fit of our model even more than before.
+
+First, we must define these polynomial terms in our data frames:
+```{python}
+insurance_analysis["bmi_squared"] = insurance_analysis["bmi"]**2
+insurance_analysis["bmi_cubed"] = insurance_analysis["bmi"]**3
+
+new_insurance["bmi_squared"] = new_insurance["bmi"]**2
+new_insurance["bmi_cubed"] = new_insurance["bmi"]**3
+new_insurance["age_square"] = new_insurance["age"]**2
+new_insurance["age_cubed"] = new_insurance["age"]**3
+```
+
+Now we can add them to our models:
+
+**Second order polynomial models**
+```{python}
+y_train = insurance_analysis["log_charges"]
+y_test = new_insurance["log_charges"]
+
+models = {
+    # original
+    "Model 7": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'age_sexFemale'],
+    # add age squared
+    "Model 10": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'age_sexFemale', 'age_square'],
+    # add bmi squared
+    "Model 11": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'age_sexFemale', 'bmi_squared'],
+    # add age squared and bmi squared 
+    "Model 12": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'age_sexFemale', 'age_square', 'bmi_squared']
+
+}
+
+rows = []
+for name, Xcols in models.items():
+    X = insurance_analysis[Xcols] #uses training data for X columns and obtains columns of interest given the model
+    model = LinearRegression().fit(X, y_train) #fits model based on training data
+    y_test_ = model.predict(new_insurance[Xcols]) #predicts values of y in test data
+    y_train_ = model.predict(insurance_analysis[Xcols]) #predicts values of y in train data
+    new_insurance[f"{name}_predict"] = y_test_
+    train_mse = mean_squared_error(y_train, y_train_)
+    test_mse = mean_squared_error(y_test, y_test_)
+    adj_rsq = r2_score(y_test, y_test_)
+    rows.append({"Model": name, "Train MSE": train_mse, "Test MSE": test_mse, "Adj. R-squared":adj_rsq})
+
+test_error = pd.DataFrame(rows)
+df_error_long = test_error[["Model", "Train MSE", "Test MSE"]].melt(id_vars=["Model"], value_name = "MSE", var_name = "type")
+
+(ggplot(df_error_long,
+        aes(x = "Model",
+            y = "MSE",
+            color = "type")) +
+ geom_point()
++ labs(title = "Model Test and Train MSE")
++ theme_bw()
+)
+```
+
+Adding age squared and bmi squared terms to our model (model twelve) seems to have reduced our test MSE from the previous model. Therefore, we will use this model going forward.
+
+**Third order polynomial models**
+```{python}
+y_train = insurance_analysis["log_charges"]
+y_test = new_insurance["log_charges"]
+
+models = {
+    # original
+    "Model 12": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'age_sexFemale', 'age_square', 'bmi_squared'],
+    # add age cubed
+    "Model 13": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'age_sexFemale', 'age_square', 'bmi_squared', 'age_cubed'],
+    # add bmi cubed
+    "Model 14": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'age_sexFemale', 'age_square', 'bmi_squared', 'bmi_cubed'],
+    # add age cubed and bmi cubed
+    "Model 15": ['age', 'bmi', 'smoker_yes', 'age_smokerYes', 'bmi_smokerYes', 'sex_female', 'age_sexFemale', 'age_square', 'bmi_squared', 'age_cubed', 'bmi_cubed']
+
+}
+
+rows = []
+for name, Xcols in models.items():
+    X = insurance_analysis[Xcols] #uses training data for X columns and obtains columns of interest given the model
+    model = LinearRegression().fit(X, y_train) #fits model based on training data
+    y_test_ = model.predict(new_insurance[Xcols]) #predicts values of y in test data
+    y_train_ = model.predict(insurance_analysis[Xcols]) #predicts values of y in train data
+    new_insurance[f"{name}_predict"] = y_test_
+    train_mse = mean_squared_error(y_train, y_train_)
+    test_mse = mean_squared_error(y_test, y_test_)
+    adj_rsq = r2_score(y_test, y_test_)
+    rows.append({"Model": name, "Train MSE": train_mse, "Test MSE": test_mse, "Adj. R-squared":adj_rsq})
+
+test_error = pd.DataFrame(rows)
+df_error_long = test_error[["Model", "Train MSE", "Test MSE"]].melt(id_vars=["Model"], value_name = "MSE", var_name = "type")
+
+(ggplot(df_error_long,
+        aes(x = "Model",
+            y = "MSE",
+            color = "type")) +
+ geom_point()
++ labs(title = "Model Test and Train MSE")
++ theme_bw()
+)
+```
+
+It appears that adding third order polynomials to our models does not improve test MSE by a substantial amount. Therefore, I will choose model twelve with age, bmi, smoking status, sex,  age, bmi, and smoking status interactions, age, bmi, and sex interactions, age-squared, and bmi-squared as the predictors as my final model due to this model having the smallest test MSE.
+
+**Residual plot of model twelve**
+
+First let's calculate the residuals and add this to our data frame:
+```{python}
+new_insurance["resid_mdl_12"] = new_insurance["log_charges"] - new_insurance["Model 12_predict"]
+new_insurance.head()
+```
+
+Now we can plot the residuals vs. fitted (predicted) values:
+```{python}
+(ggplot(new_insurance,
+aes(
+  x = "Model 12_predict",
+  y = "resid_mdl_12"
+))
++ geom_point()
++ labs(x = "Model 12 Predictions", y = "Model 12 Residuals", title = "Residuals vs. Fitted")
++ theme_bw()
+)
+```

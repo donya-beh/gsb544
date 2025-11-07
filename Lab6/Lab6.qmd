@@ -1,0 +1,326 @@
+---
+title: "Lab 6"
+author: "Donya Behroozi"
+embed-resources: true
+code-fold: true
+format: html
+---
+
+# Load libraries and read in data
+```{python}
+import pandas as pd
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.compose import make_column_selector, ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, PolynomialFeatures
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import r2_score
+from sklearn.model_selection import GridSearchCV
+
+baseball = pd.read_csv("/Users/donyabehroozi/Downloads/Hitters.csv")
+baseball.head()
+```
+
+
+# Clean data
+
+First, let's check our variable types:
+```{python}
+baseball.dtypes
+```
+
+The variable types appear to be as expected given the data description.
+
+Now, check for missing variables:
+```{python}
+baseball.isna().sum()
+```
+
+There are 59 missing salaries. I will drop these values from the data frame.
+```{python}
+baseball = baseball.dropna()
+baseball.shape[0]
+```
+
+Our data frame now has 322 - 59 = 263 observations.
+
+# Part 1: Different Model Specs
+
+## A. Regression without regularization
+
+1. Create a pipeline that includes all the columns as predictors for Salary, and performs ordinary linear regression.
+
+First let's define our X and y variables:
+```{python}
+X = baseball.drop(["Salary"], axis = 1)
+y = baseball["Salary"]
+```
+
+```{python}
+X.head()
+```
+
+```{python}
+y.head()
+```
+
+**Linear regression pipeline**
+
+Column transformer:
+```{python}
+#column transformer that dummifies categorical variables, passes remainder through
+ct_dummify_stdz = ColumnTransformer(
+  [
+    ("dummify",
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore', drop = "first"),
+    make_column_selector(dtype_include=object)),
+    ("standardize",
+    StandardScaler(),
+    make_column_selector(dtype_include=np.number))
+  ],
+  remainder = "passthrough"
+).set_output(transform="pandas")
+
+ct_dummify_stdz.fit_transform(X).head()
+```
+
+Full pipeline:
+```{python}
+lr_pipeline = Pipeline(
+  [("preprocessing", ct_dummify_stdz),
+  ("linear_regression", LinearRegression())]
+)
+
+lr_pipeline
+```
+
+2. Fit this pipeline to the full dataset, and interpret a few of the most important coefficients.
+```{python}
+lr_pipeline_fitted = lr_pipeline.fit(X, y)
+lr_coefs = lr_pipeline_fitted.named_steps['linear_regression'].coef_
+lr_abs_coefs = np.abs(lr_coefs)
+lr_coef_names = lr_pipeline_fitted.named_steps["preprocessing"].get_feature_names_out()
+lr_coef_df = pd.DataFrame({"Variable": lr_coef_names, "Coef": lr_coefs, "Abs Coef": lr_abs_coefs})
+lr_coef_df.sort_values("Abs Coef", ascending=False).head(5)
+```
+
+**Interpretations**
+
+- CRuns: Salary is expected to increase by 480,747.1 dollars for each one standard deviation increase in number of runs during a player's career, holding other predictors constant.
+
+- CAtBat: Salary is expected to decrease by 391,038.7 dollars for each one standard deviation increase in number of times at bat during a player's career, holding other predictors constant.
+
+- Hits: Salary is expected to increase by 337,830.5 dollars for each one standard deviation increase in number of hits in 1986, holding other predictors constant.
+
+- AtBat: Salary is expected to increase by 291,094.6 dollars for each one standard deviation increase in number of times at bat in 1986, holding other predictors constant.
+
+- CRBI: Salary is expected to increase by 260,689.9 dollars for each one standard deviation increase in number of runs batted in a player's career, holding other predictors constant.
+
+3. Use cross-validation to estimate the MSE you would expect if you used this pipeline to predict 1989 salaries.
+```{python}
+lr_scores = cross_val_score(lr_pipeline, X=X, y=y, scoring="neg_mean_squared_error", cv=5)
+
+lr_mse = lr_scores.mean()*-1
+lr_mse
+```
+
+The MSE we would expect if we used this pipeline to predict 1989 salaries is 121,136.31 dollars squared.
+
+## B. Ridge regression
+
+1. Create a pipeline that includes all the columns as predictors for Salary, and performs ordinary ridge regression.
+```{python}
+ridge_pipeline = Pipeline(
+  [("preprocessing", ct_dummify_stdz),
+  ("ridge_regression", Ridge())]
+)
+
+ridge_pipeline
+```
+
+2. Use cross-validation to tune the lambda hyperparameter.
+```{python}
+alphas = {'ridge_regression__alpha': np.array([100, 10, 1, 0.1, 0.01])}
+gscv = GridSearchCV(ridge_pipeline, param_grid=alphas, cv = 5, scoring='r2')
+gscv_fitted = gscv.fit(X, y)
+df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
+df_cv_results_[['param_ridge_regression__alpha', 'mean_test_score']]
+```
+
+It appears that the model that performs the best out of all the given lambda values is the model with lambda = 100.
+
+3. Fit the pipeline with your chosen lambda to the full dataset, and interpret a few of the most important coefficients.
+```{python}
+ridge_pipeline_final = Pipeline(
+  [("preprocessing", ct_dummify_stdz),
+  ("ridge_regression", Ridge(alpha = 100))]
+)
+
+ridge_pipeline_fitted = ridge_pipeline_final.fit(X, y)
+ridge_coefs = ridge_pipeline_fitted.named_steps['ridge_regression'].coef_
+ridge_abs_coefs = np.abs(ridge_coefs)
+ridge_coef_names = ridge_pipeline_fitted.named_steps["preprocessing"].get_feature_names_out()
+ridge_coef_df = pd.DataFrame({"Variable": ridge_coef_names, "Coef": ridge_coefs, "Abs Coef": ridge_abs_coefs})
+ridge_coef_df.sort_values("Abs Coef", ascending=False).head(5)
+```
+
+**Interpretations**
+
+- PutOuts: Salary is expected to increase by 57,152 dollars for each one standard deviation increase in number of put outs in 1986, holding other predictors constant.
+
+- Division_W:
+```{python}
+baseball['Division'].value_counts()
+```
+
+SD(Division_W) = sqrt((134/263)*(1-(134/263))) = 0.5
+
+-53.025*0.5 = -26.5125
+
+Salary is is expected to be 26,513 dollars less for players that were in division W at the end of 1986 than division E, holding other predictors constant.
+
+- Hits: Salary is expected to increase by 49,783.3 dollars for each one standard deviation increase in number of hits in 1986, holding other predictors constant.
+
+- CRBI: Salary is expected to increase by 46,964.1 dollars for each one standard deviation increase in number of runs batted in during a player's career, holding other predictors constant.
+
+- CRuns: Salary is expected to increase by 45,812.2 dollars for each one standard deviation increase in number of runs during a player's career, holding other predictors constant.
+
+4. Report the MSE you would expect if you used this pipeline to predict 1989 salaries.
+
+```{python}
+ridge_scores = cross_val_score(ridge_pipeline_final, X=X, y=y, scoring="neg_mean_squared_error", cv=5)
+
+ridge_mse = ridge_scores.mean()*-1
+ridge_mse
+```
+
+The MSE we would expect if we used this pipeline to predict 1989 salaries is 121,274.424 dollars squared.
+
+## C. Lasso Regression
+
+1. Create a pipeline that includes all the columns as predictors for Salary, and performs ordinary lasso regression.
+```{python}
+lasso_pipeline = Pipeline(
+  [("preprocessing", ct_dummify_stdz),
+  ("lasso_regression", Lasso())]
+)
+
+lasso_pipeline
+```
+
+2. Use cross-validation to tune the lambda hyperparameter.
+```{python}
+alphas = {'lasso_regression__alpha': np.array([100, 10, 1, 0.1, 0.01])}
+gscv = GridSearchCV(lasso_pipeline, param_grid=alphas, cv = 5, scoring='r2')
+gscv_fitted = gscv.fit(X, y)
+df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
+df_cv_results_[['param_lasso_regression__alpha', 'mean_test_score']].sort_values("mean_test_score", ascending = False)
+```
+
+It appears that the model that performs the best out of all the given lambda values is the model with lambda = 10.
+
+3. Fit the pipeline with your chosen lambda to the full dataset, and interpret a few of the most important coefficients.
+```{python}
+lasso_pipeline_final = Pipeline(
+  [("preprocessing", ct_dummify_stdz),
+  ("lasso_regression", Lasso(alpha = 10))]
+)
+
+lasso_pipeline_fitted = lasso_pipeline_final.fit(X, y)
+lasso_coefs = lasso_pipeline_fitted.named_steps['lasso_regression'].coef_
+lasso_abs_coefs = np.abs(lasso_coefs)
+lasso_coef_names = lasso_pipeline_fitted.named_steps["preprocessing"].get_feature_names_out()
+lasso_coef_df = pd.DataFrame({"Variable": lasso_coef_names, "Coef": lasso_coefs, "Abs Coef": lasso_abs_coefs})
+lasso_coef_df.sort_values("Abs Coef", ascending=False).head(5)
+```
+
+**Interpretations** 
+
+- CRBI: Salary is expected to increase by 134,032 dollars for each one standard deviation increase in number of runs batted in during a player's career, holding other predictors constant.
+
+- Division_W: 
+
+-95.413203*0.5 = -47.7065
+
+Salary is is expected to be 47,706.5 dollars less for players that were in division W at the end of 1986 than division E, holding other predictors constant.
+
+- Hits: Salary is expected to increase by 88,741.6 dollars for each one standard deviation increase in number of hits in 1986, holding other predictors constant.
+
+- CRuns: Salary is expected to increase by 72,227.5 dollars for each one standard deviation increase in number of runs during a player's career, holding other predictors constant.
+
+- PutOuts: Salary is expected to increase by 66,737 dollars for each one standard deviation increase in number of put outs in 1986, holding other predictors constant.
+
+4. Report the MSE you would expect if you used this pipeline to predict 1989 salaries.
+```{python}
+lasso_scores = cross_val_score(lasso_pipeline_final, X=X, y=y, scoring="neg_mean_squared_error", cv=5)
+
+lasso_mse = lasso_scores.mean()*-1
+lasso_mse
+```
+
+The MSE we would expect if we used this pipeline to predict 1989 salaries is 121,828.141 dollars squared.
+
+## D. Elastic Net
+
+1. Create a pipeline that includes all the columns as predictors for Salary, and performs ordinary elastic net regression.
+```{python}
+elastic_net_pipeline = Pipeline(
+  [("preprocessing", ct_dummify_stdz),
+  ("elastic_net_regression", ElasticNet())]
+)
+
+elastic_net_pipeline
+```
+
+2. Use cross-validation to tune the lambda and alpha hyperparameters.
+```{python}
+param_grid = {
+    "elastic_net_regression__alpha": np.array([100, 10, 1, 0.1, 0.01]),
+    "elastic_net_regression__l1_ratio": np.array([0.0, 0.25, 0.5, 0.75, 1.0]),
+}
+
+gscv = GridSearchCV(elastic_net_pipeline, param_grid=param_grid, cv = 5, scoring='r2')
+gscv_fitted = gscv.fit(X, y)
+df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
+df_cv_results_[['param_elastic_net_regression__alpha', 'param_elastic_net_regression__l1_ratio', 'mean_test_score']].sort_values("mean_test_score", ascending = False)
+```
+
+It appears that the model that performs the best out of all the given lambda and alpha values is the model with lambda = 1 and alpha = 0.25
+
+3. Fit the pipeline with your chosen hyperparameters to the full dataset, and interpret a few of the most important coefficients.
+```{python}
+elastic_net_pipeline_final = Pipeline(
+  [("preprocessing", ct_dummify_stdz),
+  ("elastic_net_regression", ElasticNet(alpha = 1, l1_ratio=0.25))]
+)
+
+elastic_net_pipeline_fitted = elastic_net_pipeline_final.fit(X, y)
+elastic_coefs = elastic_net_pipeline_fitted.named_steps['elastic_net_regression'].coef_
+elastic_abs_coefs = np.abs(elastic_coefs)
+elastic_coef_names = elastic_net_pipeline_fitted.named_steps["preprocessing"].get_feature_names_out()
+elastic_coef_df = pd.DataFrame({"Variable": elastic_coef_names, "Coef": elastic_coefs, "Abs Coef": elastic_abs_coefs})
+elastic_coef_df.sort_values("Abs Coef", ascending=False).head(5)
+```
+
+**Interpretations** 
+
+- PutOuts: Salary is expected to increase by 46,140.7 dollars for each one standard deviation increase in number of put outs in 1986, holding other predictors constant.
+
+- CRBI: Salary is expected to increase by 38,483.1 dollars for each one standard deviation increase in number of runs batted in during a player's career, holding other predictors constant.
+
+- Hits: Salary is expected to increase by 38,419.5 dollars for each one standard deviation increase in number of hits in 1986, holding other predictors constant.
+
+- CRuns: Salary is expected to increase by 37,725.7 dollars for each one standard deviation increase in number of runs during a player's career, holding other predictors constant.
+
+- CHits: Salary is expected to increase by 36,749 dollars for each one standard deviation increase in number of hits during a player's career, holding other predictors constant.
+
+4. Report the MSE you would expect if you used this pipeline to predict 1989 salaries.
+```{python}
+elastic_scores = cross_val_score(elastic_net_pipeline_final, X=X, y=y, scoring="neg_mean_squared_error", cv=5)
+
+elastic_mse = elastic_scores.mean()*-1
+elastic_mse
+```
+
+The MSE we would expect if we used this pipeline to predict 1989 salaries is 122,065.013 dollars squared.
