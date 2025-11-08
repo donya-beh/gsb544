@@ -101,8 +101,8 @@ lr_pipeline_fitted = lr_pipeline.fit(X, y)
 lr_coefs = lr_pipeline_fitted.named_steps['linear_regression'].coef_
 lr_abs_coefs = np.abs(lr_coefs)
 lr_coef_names = lr_pipeline_fitted.named_steps["preprocessing"].get_feature_names_out()
-lr_coef_df = pd.DataFrame({"Variable": lr_coef_names, "Coef": lr_coefs, "Abs Coef": lr_abs_coefs})
-lr_coef_df.sort_values("Abs Coef", ascending=False).head(5)
+lr_coef_df = pd.DataFrame({"Variable": lr_coef_names, "Coef": lr_coefs, "Abs Coef": lr_abs_coefs}).sort_values("Abs Coef", ascending=False)
+lr_coef_df.head(5)
 ```
 
 **Interpretations**
@@ -162,7 +162,8 @@ ridge_coefs = ridge_pipeline_fitted.named_steps['ridge_regression'].coef_
 ridge_abs_coefs = np.abs(ridge_coefs)
 ridge_coef_names = ridge_pipeline_fitted.named_steps["preprocessing"].get_feature_names_out()
 ridge_coef_df = pd.DataFrame({"Variable": ridge_coef_names, "Coef": ridge_coefs, "Abs Coef": ridge_abs_coefs})
-ridge_coef_df.sort_values("Abs Coef", ascending=False).head(5)
+ridge_coef_df = ridge_coef_df.sort_values("Abs Coef", ascending=False)
+ridge_coef_df.head(5)
 ```
 
 **Interpretations**
@@ -324,3 +325,289 @@ elastic_mse
 ```
 
 The MSE we would expect if we used this pipeline to predict 1989 salaries is 122,065.013 dollars squared.
+
+# Part II. Variable Selection
+
+**Linear Regression model**
+
+1. Using only the one best numeric variable.
+
+It appears that the most impactful/important numeric variable in the linear regression model is CRuns.
+```{python}
+#column transformer that only standardizes CRuns
+ct_lrft1 = ColumnTransformer(
+  [
+    ("standardize",
+    StandardScaler(),
+    ["CRuns"])
+  ],
+  remainder = "drop"
+).set_output(transform="pandas")
+
+lr_ft1_pipeline = Pipeline(
+  [("preprocessing", ct_lrft1),
+  ("linear_regression", LinearRegression())]
+)
+
+lr_ft1_scores = cross_val_score(lr_ft1_pipeline, X=X, y=y, scoring="neg_mean_squared_error", cv=5)
+
+lr_ft1_mse = lr_ft1_scores.mean()*-1
+lr_ft1_mse
+```
+
+The MSE of this feature set is 143812.936 dollars squared.
+
+2. Using only the five best variables.
+
+The five most impactful/important numeric variables appear to be CRuns, CAtBat, Hits, AtBat, CRBI.
+```{python}
+#column transformer that dummifies categorical variables, passes remainder through
+ct_lrft2 = ColumnTransformer(
+  [
+    ("standardize",
+    StandardScaler(),
+    ["CRuns", "CAtBat", "Hits", "AtBat", "CRBI"])
+  ],
+  remainder = "drop"
+).set_output(transform="pandas")
+
+
+lr_ft2_pipeline = Pipeline(
+  [("preprocessing", ct_lrft2),
+  ("linear_regression", LinearRegression())]
+)
+
+lr_ft2_scores = cross_val_score(lr_ft2_pipeline, X=X, y=y, scoring="neg_mean_squared_error", cv=5)
+
+lr_ft2_mse = lr_ft2_scores.mean()*-1
+lr_ft2_mse
+```
+
+The MSE of this feature set is 121228.218 dollars squared.
+
+3. Using the five best numeric variables and their interactions with the one best categorical variable.
+
+```{python}
+mask = lr_coef_df.sort_values("Abs Coef", ascending=False)["Variable"].str.contains("dummify")
+lr_coef_df[mask]
+```
+
+The five best numeric variables (as found above) are CRuns, CAtBat, Hits, AtBat, CRBI. The best categorical variable appears to be Division_W.
+
+Let's first define our column transformers.
+
+Column transformer that dummifies and standardizes variables of interest:
+```{python}
+ct_lrft3_dummify_stdz = ColumnTransformer(
+  [
+    ("dummify",
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore', drop = "first"),
+    ["Division"]),
+    ("standardize",
+    StandardScaler(),
+    ["CRuns", "CAtBat", "Hits", "AtBat", "CRBI"])
+  ],
+  remainder = "drop"
+).set_output(transform="pandas")
+
+X_dummified = ct_lrft3_dummify_stdz.fit_transform(X)
+X_dummified.head()
+```
+
+Column transformer that makes interactions between numeric and categorical variables:
+```{python}
+ct_lrft3_inter = ColumnTransformer(
+  [
+    ("interactionCRuns", PolynomialFeatures(interaction_only = True, include_bias=False), ["dummify__Division_W", "standardize__CRuns"]),
+    ("interactionCAtBat", PolynomialFeatures(interaction_only = True, include_bias=False), ["dummify__Division_W", "standardize__CAtBat"]),
+    ("interactionHits", PolynomialFeatures(interaction_only = True, include_bias=False), ["dummify__Division_W", "standardize__Hits"]),
+    ("interactionAtBat", PolynomialFeatures(interaction_only = True, include_bias=False), ["dummify__Division_W", "standardize__AtBat"]),
+    ("interactionCRBI", PolynomialFeatures(interaction_only = True, include_bias=False), ["dummify__Division_W", "standardize__CRBI"])
+  ],
+  remainder = "drop"
+).set_output(transform = "pandas")
+
+ct_lrft3_inter.fit_transform(X_dummified)
+```
+
+Create pipeline and find MSE:
+```{python}
+lr_ft3_pipeline = Pipeline(
+  [("dummify_stdz", ct_lrft3_dummify_stdz),
+  ("interactions", ct_lrft3_inter),
+  ("linear_regression", LinearRegression())]
+)
+
+lr_ft3_scores = cross_val_score(lr_ft3_pipeline, X=X, y=y, scoring="neg_mean_squared_error", cv=5)
+
+lr_ft3_mse = lr_ft3_scores.mean()*-1
+lr_ft3_mse
+```
+
+The MSE of this feature set is 127199.713 dollars squared.
+
+**Ridge regression model**
+
+1. Using only the one best numeric variable.
+
+It appears that the most impactful/important numeric variable in the ridge regression model is PutOuts.
+```{python}
+#column transformer that only standardizes PutOuts
+ct_ridgeft1 = ColumnTransformer(
+  [
+    ("standardize",
+    StandardScaler(),
+    ["PutOuts"])
+  ],
+  remainder = "drop"
+).set_output(transform="pandas")
+
+#fit pipeline
+ridgeft1_pipeline = Pipeline(
+  [("preprocessing", ct_ridgeft1),
+  ("ridge_regression", Ridge())]
+)
+
+#tune lambda
+alphas = {'ridge_regression__alpha': np.array([100, 10, 1, 0.1, 0.01])}
+gscv = GridSearchCV(ct_ridgeft1_pipeline, param_grid=alphas, cv = 5, scoring='r2')
+gscv_fitted = gscv.fit(X, y)
+df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
+df_cv_results_[['param_ridge_regression__alpha', 'mean_test_score']]
+```
+
+Again, the model that performs the best out of the given lambdas is the model with lambda = 100.
+
+```{python}
+ridgeft1_pipeline_final = Pipeline(
+  [("preprocessing", ct_ridgeft1),
+  ("ridge_regression", Ridge(alpha = 100))]
+)
+
+ridgeft1_scores = cross_val_score(ridgeft1_pipeline_final, X=X, y=y, scoring="neg_mean_squared_error", cv=5)
+
+ridgeft1_mse = ridgeft1_scores.mean()*-1
+ridgeft1_mse
+```
+
+The MSE of this feature set is 193417.809 dollars squared.
+
+2. Using only the five best variables.
+
+```{python}
+ridge_coef_df.head(6)
+```
+
+It appears that five the most impactful/important numeric variables in the ridge regression model are PutOuts, Hits, CRBI, CRuns, and CHits. 
+```{python}
+#column transformer that only standardizes PutOuts, Hits, CRBI, CRuns, and CHits
+ct_ridgeft2 = ColumnTransformer(
+  [
+    ("standardize",
+    StandardScaler(),
+    ["PutOuts", "Hits", "CRBI", "CRuns", "CHits"])
+  ],
+  remainder = "drop"
+).set_output(transform="pandas")
+
+#fit pipeline
+ridgeft2_pipeline = Pipeline(
+  [("preprocessing", ct_ridgeft2),
+  ("ridge_regression", Ridge())]
+)
+
+#tune lambda
+alphas = {'ridge_regression__alpha': np.array([100, 10, 1, 0.1, 0.01])}
+gscv = GridSearchCV(ridgeft2_pipeline, param_grid=alphas, cv = 5, scoring='r2')
+gscv_fitted = gscv.fit(X, y)
+df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
+df_cv_results_[['param_ridge_regression__alpha', 'mean_test_score']]
+```
+
+The model that performs the best out of the given lambdas is the model with lambda = 100.
+```{python}
+ridgeft2_pipeline_final = Pipeline(
+  [("preprocessing", ct_ridgeft2),
+  ("ridge_regression", Ridge(alpha = 100))]
+)
+
+ridgeft2_scores = cross_val_score(ridgeft2_pipeline_final, X=X, y=y, scoring="neg_mean_squared_error", cv=5)
+
+ridgeft2_mse = ridgeft2_scores.mean()*-1
+ridgeft2_mse
+```
+
+The MSE of this feature set is 122442.744 dollars squared.
+
+3. Using the five best numeric variables and their interactions with the one best categorical variable.
+
+The five best numeric variables (as found above) are PutOuts, Hits, CRBI, CRuns, and CHits. The best categorical variable appears to be Division_W.
+
+Let's first define our column transformers.
+
+Column transformer that dummifies and standardizes variables of interest:
+```{python}
+ct_ridgeft3_dummify_stdz = ColumnTransformer(
+  [
+    ("dummify",
+    OneHotEncoder(sparse_output = False, handle_unknown='ignore', drop = "first"),
+    ["Division"]),
+    ("standardize",
+    StandardScaler(),
+    ["PutOuts", "Hits", "CRBI", "CRuns", "CHits"])
+  ],
+  remainder = "drop"
+).set_output(transform="pandas")
+
+X_dummified = ct_ridgeft3_dummify_stdz.fit_transform(X)
+X_dummified.head()
+```
+
+Column transformer that makes interactions between numeric and categorical variables:
+```{python}
+ct_ridgeft3_inter = ColumnTransformer(
+  [
+    ("interactionPutOuts", PolynomialFeatures(interaction_only = True, include_bias=False), ["dummify__Division_W", "standardize__PutOuts"]),
+    ("interactionHits", PolynomialFeatures(interaction_only = True, include_bias=False), ["dummify__Division_W", "standardize__Hits"]),
+    ("interactionCRBI", PolynomialFeatures(interaction_only = True, include_bias=False), ["dummify__Division_W", "standardize__CRBI"]),
+    ("interactionCRuns", PolynomialFeatures(interaction_only = True, include_bias=False), ["dummify__Division_W", "standardize__CRuns"]),
+    ("interactionCHits", PolynomialFeatures(interaction_only = True, include_bias=False), ["dummify__Division_W", "standardize__CHits"])
+  ],
+  remainder = "drop"
+).set_output(transform = "pandas")
+
+ct_ridgeft3_inter.fit_transform(X_dummified).head()
+```
+
+Create pipeline:
+```{python}
+#fit pipeline
+ridgeft3_pipeline = Pipeline(
+  [("dummify_stdz", ct_ridgeft3_dummify_stdz),
+  ("interactions", ct_ridgeft3_inter),
+  ("ridge_regression", Ridge())]
+)
+
+#tune lambda
+alphas = {'ridge_regression__alpha': np.array([100, 10, 1, 0.1, 0.01])}
+gscv = GridSearchCV(ridgeft3_pipeline, param_grid=alphas, cv = 5, scoring='r2')
+gscv_fitted = gscv.fit(X, y)
+df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
+df_cv_results_[['param_ridge_regression__alpha', 'mean_test_score']]
+```
+
+The model that performs the best out of the given lambdas is the model with lambda = 100.
+```{python}
+ridgeft3_pipeline_final = Pipeline(
+  [("dummify_stdz", ct_ridgeft3_dummify_stdz),
+  ("interactions", ct_ridgeft3_inter),
+  ("ridge_regression", Ridge(alpha = 100))]
+)
+
+ridgeft3_scores = cross_val_score(ridgeft3_pipeline_final, X=X, y=y, scoring="neg_mean_squared_error", cv=5)
+
+ridgeft3_mse = ridgeft3_scores.mean()*-1
+ridgeft3_mse
+```
+
+The MSE of this feature set is 119058.886 dollars squared.
