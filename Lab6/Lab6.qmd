@@ -18,6 +18,7 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import r2_score
 from sklearn.model_selection import GridSearchCV
+from plotnine import *
 
 baseball = pd.read_csv("/Users/donyabehroozi/Downloads/Hitters.csv")
 baseball.head()
@@ -38,7 +39,7 @@ Now, check for missing variables:
 baseball.isna().sum()
 ```
 
-There are 59 missing salaries. I will drop these values from the data frame.
+There are 59 missing salaries. I will drop these values from the data frame. But we should not that this is a concern with this data set since our response variable contains 18% missing values.
 ```{python}
 baseball = baseball.dropna()
 baseball.shape[0]
@@ -46,7 +47,7 @@ baseball.shape[0]
 
 Our data frame now has 322 - 59 = 263 observations.
 
-# Part 1: Different Model Specs
+# Part I: Different Model Specs
 
 ## A. Regression without regularization
 
@@ -114,7 +115,7 @@ lr_coef_df.head(5)
 
 - Hits: Salary is expected to increase by 337,830.5 dollars for each one standard deviation increase in number of hits in 1986, holding other predictors constant.
 
-- AtBat: Salary is expected to increase by 291,094.6 dollars for each one standard deviation increase in number of times at bat in 1986, holding other predictors constant.
+- AtBat: Salary is expected to decrease by 291,094.6 dollars for each one standard deviation increase in number of times at bat in 1986, holding other predictors constant.
 
 - CRBI: Salary is expected to increase by 260,689.9 dollars for each one standard deviation increase in number of runs batted in a player's career, holding other predictors constant.
 
@@ -213,6 +214,7 @@ lasso_pipeline
 
 2. Use cross-validation to tune the lambda hyperparameter.
 ```{python}
+#| warning: false
 alphas = {'lasso_regression__alpha': np.array([100, 10, 1, 0.1, 0.01])}
 gscv = GridSearchCV(lasso_pipeline, param_grid=alphas, cv = 5, scoring='r2')
 gscv_fitted = gscv.fit(X, y)
@@ -278,6 +280,7 @@ elastic_net_pipeline
 
 2. Use cross-validation to tune the lambda and alpha hyperparameters.
 ```{python}
+#| warning: false
 param_grid = {
     "elastic_net_regression__alpha": np.array([100, 10, 1, 0.1, 0.01]),
     "elastic_net_regression__l1_ratio": np.array([0.0, 0.25, 0.5, 0.75, 1.0]),
@@ -286,7 +289,7 @@ param_grid = {
 gscv = GridSearchCV(elastic_net_pipeline, param_grid=param_grid, cv = 5, scoring='r2')
 gscv_fitted = gscv.fit(X, y)
 df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
-df_cv_results_[['param_elastic_net_regression__alpha', 'param_elastic_net_regression__l1_ratio', 'mean_test_score']].sort_values("mean_test_score", ascending = False)
+df_cv_results_[['param_elastic_net_regression__alpha', 'param_elastic_net_regression__l1_ratio', 'mean_test_score']].sort_values("mean_test_score", ascending = False).head(5)
 ```
 
 It appears that the model that performs the best out of all the given lambda and alpha values is the model with lambda = 1 and alpha = 0.25
@@ -358,7 +361,7 @@ lr_ft1_mse = lr_ft1_scores.mean()*-1
 lr_ft1_mse
 ```
 
-The MSE of this feature set is 143812.936 dollars squared.
+The MSE of this feature set is 143,812.936 dollars squared.
 
 2. Using only the five best variables.
 
@@ -386,7 +389,7 @@ lr_ft2_mse = lr_ft2_scores.mean()*-1
 lr_ft2_mse
 ```
 
-The MSE of this feature set is 121228.218 dollars squared.
+The MSE of this feature set is 121,228.218 dollars squared.
 
 3. Using the five best numeric variables and their interactions with the one best categorical variable.
 
@@ -430,7 +433,7 @@ ct_lrft3_inter = ColumnTransformer(
   remainder = "drop"
 ).set_output(transform = "pandas")
 
-ct_lrft3_inter.fit_transform(X_dummified)
+ct_lrft3_inter.fit_transform(X_dummified).head()
 ```
 
 Create pipeline and find MSE:
@@ -447,9 +450,9 @@ lr_ft3_mse = lr_ft3_scores.mean()*-1
 lr_ft3_mse
 ```
 
-The MSE of this feature set is 127199.713 dollars squared.
+The MSE of this feature set is 127,199.713 dollars squared.
 
-The combination of features that performed the best for the linear regression model is the model using only the five best numeric variables: CRuns, CAtBat, Hits, AtBat, CRBI (smallest MSE = 121228.218).
+The combination of features that performed the best for the linear regression model is the model using only the five best numeric variables: CRuns, CAtBat, Hits, AtBat, CRBI (smallest MSE = 121,228.218).
 
 ## Ridge regression model
 
@@ -481,7 +484,7 @@ df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
 df_cv_results_[['param_ridge_regression__alpha', 'mean_test_score']]
 ```
 
-Again, the model that performs the best out of the given lambdas is the model with lambda = 100.
+The model that performs the best out of the given lambdas is the model with lambda = 100.
 
 ```{python}
 ridgeft1_pipeline_final = Pipeline(
@@ -495,7 +498,7 @@ ridgeft1_mse = ridgeft1_scores.mean()*-1
 ridgeft1_mse
 ```
 
-The MSE of this feature set is 193417.809 dollars squared.
+The MSE of this feature set is 193,417.809 dollars squared.
 
 2. Using only the five best variables.
 
@@ -542,7 +545,7 @@ ridgeft2_mse = ridgeft2_scores.mean()*-1
 ridgeft2_mse
 ```
 
-The MSE of this feature set is 122442.744 dollars squared.
+The MSE of this feature set is 122,442.744 dollars squared.
 
 3. Using the five best numeric variables and their interactions with the one best categorical variable.
 
@@ -615,9 +618,9 @@ ridgeft3_mse = ridgeft3_scores.mean()*-1
 ridgeft3_mse
 ```
 
-The MSE of this feature set is 119058.886 dollars squared.
+The MSE of this feature set is 119,058.886 dollars squared.
 
-The combination of features that performed the best for the ridge regression model is the model using the five best numeric variables and their interactions with the one best categorical variable: PutOuts, Hits, CRBI, CRuns, and CHits, Division_W (smallest MSE = 119058.886).
+The combination of features that performed the best for the ridge regression model is the model using the five best numeric variables and their interactions with the one best categorical variable: PutOuts, Hits, CRBI, CRuns, and CHits, Division_W (smallest MSE = 119,058.886).
 
 ## Lasso regression model
 
@@ -662,7 +665,7 @@ lassoft1_mse = lassoft1_scores.mean()*-1
 lassoft1_mse
 ```
 
-The MSE of this feature set is 142236.171 dollars squared.
+The MSE of this feature set is 142,236.171 dollars squared.
 
 2. Using the five best numeric variables.
 ```{python}
@@ -708,9 +711,7 @@ lassoft2_mse = lassoft2_scores.mean()*-1
 lassoft2_mse
 ```
 
-The MSE of this feature set is 121601.438 dollars squared.
-
-The combination of features that performed the best for the lasso regression model is the model using the five best numeric variables and their interactions with the one best categorical variable: CRBI, Hits, CRuns, PutOuts, and Walks, Division_W (smallest MSE = 119131.849).
+The MSE of this feature set is 121,601.438 dollars squared.
 
 3. Using the five best numeric variables and their interactions with the one best categorical variable.
 
@@ -782,7 +783,9 @@ lassoft3_mse = lassoft3_scores.mean()*-1
 lassoft3_mse
 ``` 
 
-The MSE of this feature set is 119131.849 dollars squared.
+The MSE of this feature set is 119,131.849 dollars squared.
+
+The combination of features that performed the best for the lasso regression model is the model using the five best numeric variables and their interactions with the one best categorical variable: CRBI, Hits, CRuns, PutOuts, and Walks, Division_W (smallest MSE = 119,131.849).
 
 ## Elastic Net regression model
 
@@ -790,6 +793,7 @@ The MSE of this feature set is 119131.849 dollars squared.
 
 It appears that the most impactful/important numeric variable is PutOuts.
 ```{python}
+#| warning: false
 #column transformer that only standardizes PutOuts
 ct_elasticft1 = ColumnTransformer(
   [
@@ -814,11 +818,12 @@ param_grid = {
 gscv = GridSearchCV(elasticft1_pipeline, param_grid=param_grid, cv = 5, scoring='r2')
 gscv_fitted = gscv.fit(X, y)
 df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
-df_cv_results_[['param_elastic_net_regression__alpha', 'param_elastic_net_regression__l1_ratio', 'mean_test_score']].sort_values("mean_test_score", ascending = False)
+df_cv_results_[['param_elastic_net_regression__alpha', 'param_elastic_net_regression__l1_ratio', 'mean_test_score']].sort_values("mean_test_score", ascending = False).head()
 ```
 
 The model that performs the best out of all the given lambda and alpha values is the model with lambda = 1 and alpha = 0.25.
 ```{python}
+#| warning: false
 elasticft1_pipeline_final = Pipeline(
   [("preprocessing", ct_elasticft1),
   ("elastic_net_regression", ElasticNet(alpha = 1, l1_ratio = 0.25))]
@@ -830,12 +835,13 @@ elasticft1_mse = elasticft1_scores.mean()*-1
 elasticft1_mse
 ```
 
-The MSE of this feature set is 194082.789 dollars squared.
+The MSE of this feature set is 194,082.789 dollars squared.
 
 2. Using only the five best numeric variables.
 
 It appears that five the most impactful/important numeric variables in the elastic net regression model are PutOuts, CRBI, Hits, CRuns, and CHits.
 ```{python}
+#| warning: false
 #column transformer that standardizes PutOuts, CRBI, Hits, CRuns, and CHits
 ct_elasticft2 = ColumnTransformer(
   [
@@ -860,7 +866,7 @@ param_grid = {
 gscv = GridSearchCV(elasticft2_pipeline, param_grid=param_grid, cv = 5, scoring='r2')
 gscv_fitted = gscv.fit(X, y)
 df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
-df_cv_results_[['param_elastic_net_regression__alpha', 'param_elastic_net_regression__l1_ratio', 'mean_test_score']].sort_values("mean_test_score", ascending = False)
+df_cv_results_[['param_elastic_net_regression__alpha', 'param_elastic_net_regression__l1_ratio', 'mean_test_score']].sort_values("mean_test_score", ascending = False).head()
 ```
 
 The model that performs the best out of all the given lambda and alpha values is the model with lambda = 1 and alpha = 0.5.
@@ -876,7 +882,7 @@ elasticft2_mse = elasticft2_scores.mean()*-1
 elasticft2_mse
 ```
 
-The MSE of this feature set is 122611.710 dollars squared.
+The MSE of this feature set is 122,611.710 dollars squared.
 
 3. Using the five best numeric variables and their interactions with the one best categorical variable.
 
@@ -925,6 +931,7 @@ ct_elasticft3_inter.fit_transform(X_dummified).head()
 
 Create pipeline:
 ```{python}
+#| warning: false
 elasticft3_pipeline = Pipeline(
   [("dummify_stdz", ct_elasticft3_dummify_stdz),
   ("interactions", ct_elasticft3_inter),
@@ -939,7 +946,7 @@ param_grid = {
 gscv = GridSearchCV(elasticft3_pipeline, param_grid=param_grid, cv = 5, scoring='r2')
 gscv_fitted = gscv.fit(X, y)
 df_cv_results_ = pd.DataFrame(gscv_fitted.cv_results_)
-df_cv_results_[['param_elastic_net_regression__alpha', 'param_elastic_net_regression__l1_ratio', 'mean_test_score']].sort_values("mean_test_score", ascending = False)
+df_cv_results_[['param_elastic_net_regression__alpha', 'param_elastic_net_regression__l1_ratio', 'mean_test_score']].sort_values("mean_test_score", ascending = False).head()
 ```
 
 The model that performs the best out of all the given lambda and alpha values is the model with lambda = 1 and alpha = 0.5.
@@ -956,10 +963,95 @@ elasticft3_mse = elasticft3_scores.mean()*-1
 elasticft3_mse
 ```
 
-The MSE of this feature set is 119302.370 dollars squared.
+The MSE of this feature set is 119,302.370 dollars squared.
 
-The combination of features that performed the best for the elastic net regression model is the model using the five best numeric variables and their interactions with the one best categorical variable: PutOuts, CRBI, Hits, CRuns, and CHits, Division_W (smallest MSE = 119302.370).
+The combination of features that performed the best for the elastic net regression model is the model using the five best numeric variables and their interactions with the one best categorical variable: PutOuts, CRBI, Hits, CRuns, and CHits, Division_W (smallest MSE = 119,302.370).
 
-**Might not be needed, DELETE?**
+Overall, the combination of features and model that performed best based on the validation metric of MSE is the ridge regression model with PutOuts, Hits, CRBI, CRuns, and CHits, Division_W as features (smallest MSE = 119,058.886).
 
-Overall, the combination of features and model that performed best based on the validation metric of MSE is the ridge regression model with PutOuts, Hits, CRBI, CRuns, and CHits, Division_W as features (smallest MSE = 119058.886).
+# Part III. Discussion
+
+## A. Ridge
+**Compare your Ridge models with your ordinary regression models. How did your coefficients compare? Why does this make sense?**
+```{python}
+lr_ridge_coefdf = lr_coef_df.merge(ridge_coef_df, on = "Variable", suffixes=("_Linear", "_Ridge"))
+lr_ridge_coefdf[["Variable", "Coef_Linear","Coef_Ridge"]]
+```
+
+The ridge regression coefficients are generally smaller and less spread than the linear regression coefficients. This makes sense because we found our optimal lambda for the ridge regression model to be 100, which imposes quite a large penalty on our loss function. This penalty puts more emphasis on making the beta values of our ridge regression model as small as possible, instead of minimizing the sum of squared error (like in linear regression). Therefore, we would expect these coefficients to be smaller and less spread.
+
+## B. Lasso
+**Compare your LASSO model in I with your three LASSO models in II. Did you get the same lambda results? Why does this make sense? Did you get the same MSEs? Why does this make sense?**
+
+- Lasso model I: lambda = 10, MSE = 121,828.141 dollars squared
+
+- Lasso model II, best numeric: lambda = 10, MSE = 142,236.171 dollars squared
+
+- Lasso model II, best 5 numeric: lambda = 10, MSE = 121,601.438 dollars squared
+
+- Lasso model II, best 5 numeric, best categorical, interactions: lambda = 10, MSE = 119,131.849 dollars squared
+
+I did get the same lambda results for each lasso regression model. This makes sense because for each model, we are using the same preprocessing steps, same discrete grid for potential values of lambda, and same 5-fold cross validation procedure. So even though the feature sets are changing, the process and data used to select lambda stays consistent which leads to the same lambda value being chosen as the optimal result across each model. I did not get the same MSEs. In fact, the smallest MSE result came from the lasso regression model with the five best numeric variables, best categorical variable, and their interactions. This makes sense because the other lasso regression models are either underfitting (lasso model II, best numeric) or overfitting (lasso model I, all predictors) our data, so these models will not have the smallest MSE. The next best performing model is lasso model II with the best 5 numeric variables. However, given that Division_W (the best categorical variable) is the second most impactful/important variable in the lasso regression model from part I, it makes sense that this including this variable and its interactions between the 5 best numeric variables would decrease the MSE and result in the best performing model.
+
+## C. Elastic Net
+
+**Best numeric**
+
+- Ridge MSE: 193,417.809 dollars squared
+
+- Lasso MSE: 142,236.171 dollars squared
+
+- Elastic Net MSE: 194,082.789 dollars squared
+
+**Best 5 numeric**
+
+- Ridge MSE: 122,442.744 dollars squared
+
+- Lasso MSE: 121,601.438 dollars squared
+
+- Elastic Net MSE: 122,611.710 dollars squared
+
+**Best 5 numeric, categorical, interactions**
+
+- Ridge MSE: 119,058.886 dollars squared
+
+- Lasso MSE: 119,131.849 dollars squared
+
+- Elastic Net MSE: 119,302.370 dollars squared
+
+Interestingly, my elastic net regression models did not "win" across any of the 3 feature sets. Lasso regression resulted in the smallest MSE for the best single numeric and best 5 numeric feature sets, while ridge regression performed the best for the most complex feature set (best 5 numeric, categorical, interactions). However, it would make sense in theory that elastic net regression performs the best across the feature sets due to this regression technique implementing both the ridge and lasso penalties to our loss function. This allows us to capture the benefits of stabalization of correlated predictors (ridge penalty) and automatic feature selection (lasso penalty). It is possible that my elastic net models did not perform the best because of the discrete parameter grids I explored and/or this data leaning strongly toward a pure ridge or lasso penalty, so the extra alpha term could potentially increase complexity to our loss function for no reason.
+
+# Part IV. Final Model
+
+As mentioned at the end of part II, the combination of features and models that performed best based on the validation metric of MSE is the ridge regression model with PutOuts, Hits, CRBI, CRuns, and CHits, Division_W as predictors (smallest MSE = 119,058.886). 
+
+Let's fit this pipeline on the full dataset:
+```{python}
+ridgeft3_pipeline_final = Pipeline(
+  [("dummify_stdz", ct_ridgeft3_dummify_stdz),
+  ("interactions", ct_ridgeft3_inter),
+  ("ridge_regression", Ridge(alpha = 100))]
+)
+
+ridge_pipeline_final_fitted = ridgeft3_pipeline_final.fit(X, y)
+best_model_predicted_y = ridge_pipeline_final_fitted.predict(X)
+actual_y = baseball["Salary"]
+
+y_values = {"Predicted Salary": best_model_predicted_y, "Actual Salary": actual_y}
+y_values = pd.DataFrame(y_values)
+
+(ggplot(y_values,
+aes(
+  x = "Actual Salary",
+  y = "Predicted Salary"
+))
++ geom_point()
++ theme_bw()
++ labs(x = "Actual Salary (1000s $)", y = "Predicted Salary (1000s $)", title = "Predicted vs. Actual Salary")
++ geom_abline(slope=1, intercept=0, linetype="dashed", color = "red")
++ scale_y_continuous(limits = (0, 2600), breaks = [500, 1000, 1500, 2000, 2500], labels = [500, 1000, 1500, 2000, 2500])
++ scale_x_continuous(limits = (0, 2600), breaks = [500, 1000, 1500, 2000, 2500], labels = [500, 1000, 1500, 2000, 2500])
+)
+```
+
+It seems that even the "best" performing model doesn't necessarily predict our actual baseball salary values perfectly. The plot above shows instances where our model greatly underpredits actual baseball salaries and generally does not closely follow the red dashed line, representing perfect predictions. Overall, this shows me that there is really no "best" or "perfect" model that can predict baseball salary with 100% accuracy. But, this is normal with regression modeling. We explore many different models and choose the one that best predicts our response variable based on some validation metric, not the model that can perfectly predict our response variable.
