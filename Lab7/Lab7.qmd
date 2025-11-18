@@ -1,0 +1,558 @@
+---
+title: "Lab 7"
+author: "Donya Behroozi"
+embed-resources: true
+code-fold: true
+format: html
+toc: true
+---
+
+# Data Exploration
+
+## Load libraries and read in data
+```{python}
+import pandas as pd
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_predict
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay, make_scorer, recall_score, roc_auc_score, precision_score, cohen_kappa_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_selection import SequentialFeatureSelector
+from sklearn.tree import DecisionTreeClassifier
+import matplotlib.pyplot as plt
+from sklearn import tree
+ha = pd.read_csv("https://www.dropbox.com/s/aohbr6yb9ifmc8w/heart_attack.csv?dl=1")
+ha.head()
+```
+
+## Summarize data
+
+**Check for NAs:**
+```{python}
+ha.isna().sum()
+```
+
+There are no NAs across any of the variables.
+
+**Describe variables:**
+```{python}
+ha[['age', 'trtbps', 'chol', 'thalach']].describe()
+```
+
+```{python}
+print(ha.value_counts("cp"))
+print(ha.value_counts("restecg"))
+```
+
+The dataset primarily consists of middle-aged male individuals with asymptomatic chest pain, somewhat higher than usual blood pressure, high cholesterol, and normal resting electrocardiographic results.
+
+**Data types:**
+```{python}
+ha.dtypes
+```
+
+The numeric variable types are as expected. I will transform chest pain type and resting electrocardiographic results to dummy variables.
+
+```{python}
+ha['cp'] = ha['cp'].astype('object')
+ha['restecg'] = ha['restecg'].astype('object')
+
+ha = pd.get_dummies(ha)*1
+ha.head()
+```
+
+
+# Part One: Fitting Models
+
+**Define X and y**
+```{python}
+X = ha.drop(["output"], axis = 1)
+y = ha["output"]
+```
+
+```{python}
+X.head()
+```
+
+```{python}
+y.head()
+```
+
+Note: For cross validation, I will be using stratified K-fold cross validation to ensure that classes of my response variable are represented equally in my folds.
+
+## Q1: KNN
+
+To choose the best pipeline for KNN, I will determine the best combination of variables, choice of scaling (standard vs. min/max), distance metric (Euclidean vs. Manhattan), and choice of k with hyperparameter tuning and a grid search. Feature combinations will be chosen based on a backward sequential feature selector, where feature combinations that result in the highest cross-validated AUC score will be used as the final variables in our model.
+
+```{python}
+#| warning: false
+
+#define column transformer that scales numeric variables
+preprocessing = ColumnTransformer(
+    transformers=[("scale", StandardScaler(), ['age','trtbps','chol','thalach'])],
+    remainder="passthrough"
+)
+
+
+#define feature selector
+feature_selector = SequentialFeatureSelector(
+    estimator = KNeighborsClassifier(),
+    direction = "backward",
+    scoring = "roc_auc",
+    cv = 5,
+    n_jobs = -1
+)
+
+#define pipeline
+KNN_pipeline = Pipeline([
+    ("preprocessing", preprocessing),
+    ("feature_selection", feature_selector),
+    ("knn", KNeighborsClassifier())
+])
+
+#define parameter space
+param_grid = {
+    "preprocessing__scale":[StandardScaler(), MinMaxScaler()], #choice of scaler
+    "feature_selection__n_features_to_select": list(range(1,11+1)), #choice of features
+    "knn__n_neighbors": list(range(1,20+1)), #choice of k
+    "knn__p": [1,2], #choice of distance (1 = Manhattan, 2 = Euclidean)
+}
+
+cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=321) 
+
+#perform grid search
+grid_search = GridSearchCV(
+    KNN_pipeline,
+    param_grid = param_grid,
+    scoring = "roc_auc",
+    cv = cv,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+feature_names = grid_search.best_estimator_.named_steps["preprocessing"].get_feature_names_out()
+mask = grid_search.best_estimator_.named_steps["feature_selection"].get_support()
+print("Best AUC:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+print("Best features:", feature_names[mask])
+```
+
+The best KNN model is the model using a **min/max scaler**, **age, resting blood pressure, maximum heart rate achieved during exercise, sex, chest pain types 0, 1, and 3**, and **resting electrocardiographic results 0, 1, and 2** as features, **manhattan distance** as the distance metric, and **k = 6** due to having the highest cross-validated **AUC score = 0.844**.
+
+**Define final best KNN pipeline:**
+```{python}
+#redefine X for KNN based on final selected features
+X_KNN = ha[['age','trtbps', 'thalach', 'sex', 'cp_0', 'cp_1', 'cp_3', 'restecg_0', 'restecg_1', 'restecg_2']]
+
+#KNN column transformer
+KNN_preprocessing = ColumnTransformer(
+    transformers=[("scale", MinMaxScaler(), ['age','trtbps','thalach'])],
+    remainder="passthrough"
+)
+
+KNN_pipeline_final = Pipeline([
+    ("preprocessing", KNN_preprocessing),
+    ("knn", KNeighborsClassifier(n_neighbors = 6, p = 1))
+])
+```
+
+**Confusion matrix:**
+```{python}
+#| warning: false
+#make predictions of output
+KNN_fitted = KNN_pipeline_final.fit(X_KNN, y)
+
+#output confusion matrix
+ConfusionMatrixDisplay.from_estimator(KNN_fitted, X_KNN, y)
+```
+
+## Q2: Logistic Regression
+
+To choose the best logistic regression model, I will fine tune the LASSO penalty parameter to perform automatic feature selection. I will also test whether using standard scaling or min/max scaling results in the higher AUC score.
+
+```{python}
+#| warning: false
+#define column transformer that scales numeric variables
+preprocessing = ColumnTransformer(
+    transformers=[("scale", StandardScaler(), ['age','trtbps','chol','thalach'])],
+    remainder="passthrough"
+)
+
+#define pipeline
+logit_pipeline = Pipeline(
+    [
+        ("preprocessing", preprocessing),
+        ("logit_regression", LogisticRegression(solver = "liblinear", max_iter=5000))
+    ]
+)
+
+#define parameter space
+param_grid = {
+    "preprocessing__scale":[StandardScaler(), MinMaxScaler()], #choice of scaler
+    "logit_regression__penalty":["l1"], #lasso penalty
+    "logit_regression__C":[0.001, 0.01, 0.1, 1, 10], #regularization strength
+    "logit_regression__solver":["liblinear"]
+}
+
+#perform grid search
+grid_search = GridSearchCV(
+    logit_pipeline,
+    param_grid=param_grid,
+    scoring="roc_auc",
+    cv=10
+)
+
+grid_search.fit(X, y)
+print("Best AUC:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+**Define final logistic regression model and obtain coefficients:**
+```{python}
+#logistic regression column transformer
+logit_preprocessing = ColumnTransformer(
+    transformers=[("scale", StandardScaler(), ['age','trtbps','thalach', 'chol'])],
+    remainder="passthrough"
+)
+
+logit_pipeline_final = Pipeline(
+    [
+        ("preprocessing", logit_preprocessing),
+        ("logit_regression", LogisticRegression(solver="liblinear", penalty="l1", C = 10))
+    ]
+)
+
+logit_pipeline_fitted = logit_pipeline_final.fit(X, y)
+logit_coefs = logit_pipeline_fitted.named_steps['logit_regression'].coef_
+logit_coef_names = logit_pipeline_fitted.named_steps["preprocessing"].get_feature_names_out()
+logit_coef_df = pd.DataFrame({"Variable": logit_coef_names, "Coef": logit_coefs[0]})
+logit_coef_df
+```
+
+After performing a grid search, I found the best logistic regression model to be the one that includes a lasso penalty with **regularization strength = 10**, **predictors age, resting blood pressure, maximum heart rate achieved during exercise, cholesterol, sex, chest pain types 0, 1, and 2, and resting electrographic results 0 and 1** and uses **standard scaling** of numeric variables due to having the highest cross-validated **AUC score = 0.868**.
+
+**Interpretation of coefficients:**
+
+- Age (scaled): For each one standard deviation increase in age, the estimated odds of experiencing an exercise-induced heart attack decrease by 18.89%, holding other predictors constant.
+
+- Resting blood pressure (scaled): For each one standard deviation increase in resting blood pressure, the estimated odds of experiencing an exercise-induced heart attack decrease by 29.37%, holding other predictors constant.
+
+- Maximum heart rate achieved (scaled): For each one standard deviation increase in maximum heart rate achieved during exercise, the estimated odds of experiencing an exercise-induced heart attack increase by 120.52%, holding other predictors constant.
+
+- Cholesterol (scaled): For each one standard deviation increase in cholesterol, the estimated odds of experiencing an exercise-induced heart attack decrease by 26.15%, holding other predictors constant.
+
+- Sex: The estimated odds of experiencing an exercise-induced heart attack is 88.88% lower for males than for females, holding other predictors constant.
+
+- Chest pain type (0): The estimated odds of experiencing an exercise-induced heart attack is 88.88% lower for those with asymptomatic chest pain than for those with non-anginal pain, holding other predictors constant.
+
+- Chest pain type (1): The estimated odds of experiencing an exercise-induced heart attack is 33.75% higher for those with typical angina chest pain than for those with non-anginal pain, holding other predictors constant.
+
+- Chest pain type (2): The estimated odds of experiencing an exercise-induced heart attack is 9.41% higher for those with atypical angina chest pain than for those with non-anginal pain, holding other predictors constant.
+
+- Resting electrocardiographic (0): The estimated odds of experiencing an exercise-induced heart attack is 73.27% higher for those with normal resting electrocardiographic results than for those with probable or definite left ventricular hypertrophy, holding other predictors constant.
+
+- Resting electrocardiographic (1): The estimated odds of experiencing an exercise-induced heart attack is 143.55% higher for those with ST-T wave abnormality results than for those with probable or definite left ventricular hypertrophy, holding other predictors constant.
+
+**Confusion matrix:**
+```{python}
+#make predictions of output
+logit_fitted = logit_pipeline_final.fit(X, y)
+
+#output confusion matrix
+ConfusionMatrixDisplay.from_estimator(logit_fitted, X, y)
+```
+
+## Q3: Decision Tree
+
+To find the best pipeline for my decision tree, I will be using hyperparameter tuning to determine the best values of the cost complexity parameter, max depth, and minimum number of samples required to be in the tree's leaf nodes.
+
+```{python}
+dt = DecisionTreeClassifier(random_state = 321)
+
+paramGrid = {
+    'ccp_alpha': dt.cost_complexity_pruning_path(X, y).ccp_alphas, 
+    'max_depth': range(1, 10+1), 
+    'min_samples_leaf': range(1, 10+1)
+}
+
+grid_search = GridSearchCV(dt, 
+                      paramGrid, 
+                      cv = cv, 
+                      scoring = 'roc_auc', 
+                      n_jobs = -1)
+
+grid_search.fit(X, y)
+print("Best AUC:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+**Display tree:**
+```{python}
+plt.figure(figsize=(20,10))
+dt_final = grid_search.best_estimator_
+tree.plot_tree(dt_final, feature_names = X.columns, filled = True, rounded = True, fontsize = 10)
+```
+
+The best decision tree model is the model with a **cost complexity parameter of 0.002**, **max depth of 4**, **8 minimum samples per leaf**, and **chest pain type 0, maximum heart rate achieved during exercise, age, sex, resting blood pressure**, and **cholesterol** as features due to having the highest cross-validated **AUC score = 0.827**.
+
+**Confusion matrix:**
+```{python}
+#make predictions of output
+dt_fitted = dt_final.fit(X, y)
+
+#output confusion matrix
+ConfusionMatrixDisplay.from_estimator(dt_fitted, X, y)
+```
+
+
+## Q4 Interpretation
+
+Across all three models, the predictors that were most important to predicting heart attack risk include age, resting blood pressure, maximum heart rate achieved during exercise, sex, and chest pain type 0 (asymptomatic) as these variables appeared in each model's final feature sets.
+
+## Q5: ROC Curve
+
+**KNN**
+```{python}
+fig, ax = plt.subplots(figsize = (6,6))
+
+#roc curve for random classifier
+ax.plot([0, 1], [0, 1], ls="--", c="k", label = "Random Classifier")
+
+#generate roc curve for KNN model
+RocCurveDisplay.from_estimator(KNN_fitted, X, y, ax = ax, name = "KNN")
+```
+
+**Logistic Regression**
+```{python}
+fig, ax = plt.subplots(figsize = (6,6))
+
+#roc curve for random classifier
+ax.plot([0, 1], [0, 1], ls="--", c="k", label = "Random Classifier")
+
+#generate roc curve for KNN model
+RocCurveDisplay.from_estimator(logit_fitted, X, y, ax = ax, name = "Logit")
+```
+
+**Decision Tree**
+```{python}
+fig, ax = plt.subplots(figsize = (6,6))
+
+#roc curve for random classifier
+ax.plot([0, 1], [0, 1], ls="--", c="k", label = "Random Classifier")
+
+#generate roc curve for KNN model
+RocCurveDisplay.from_estimator(dt_fitted, X, y, ax = ax, name = "Decision Tree")
+```
+
+
+# Part Two: Metrics
+
+**KNN model**
+```{python}
+#recall
+recall_KNN = cross_val_score(KNN_pipeline_final, X_KNN, y,
+                cv=cv, scoring="recall").mean()
+
+#precision
+precision_KNN = cross_val_score(KNN_pipeline_final, X_KNN, y,
+                cv=cv, scoring="precision").mean()
+
+#specificity
+specificity = make_scorer(recall_score, pos_label=0)
+specificity_KNN = cross_val_score(KNN_pipeline_final, X_KNN, y,
+                cv=cv, scoring=specificity).mean()
+
+print("Recall: {}\nPrecision: {}\nSpecificity: {}".format(round(recall_KNN, 3), round(precision_KNN, 3), round(specificity_KNN, 3)))
+```
+
+**Logistic Regression model**
+```{python}
+#recall
+recall_logit = cross_val_score(logit_pipeline_final, X, y,
+                cv=cv, scoring="recall").mean()
+
+#precision
+precision_logit = cross_val_score(logit_pipeline_final, X, y,
+                cv=cv, scoring="precision").mean()
+
+#specificity
+specificity = make_scorer(recall_score, pos_label=0)
+specificity_logit = cross_val_score(logit_pipeline_final, X, y,
+                cv=cv, scoring=specificity).mean()
+
+print("Recall: {}\nPrecision: {}\nSpecificity: {}".format(round(recall_logit, 3), round(precision_logit, 3), round(specificity_logit, 3)))
+```
+
+**Decision Tree model**
+```{python}
+#recall
+recall_dt = cross_val_score(dt_final, X, y,
+                cv=cv, scoring="recall").mean()
+
+#precision
+precision_dt = cross_val_score(dt_final, X, y,
+                cv=cv, scoring="precision").mean()
+
+#specificity
+specificity = make_scorer(recall_score, pos_label=0)
+specificity_dt = cross_val_score(dt_final, X, y,
+                cv=cv, scoring=specificity).mean()
+
+print("Recall: {}\nPrecision: {}\nSpecificity: {}".format(round(recall_dt, 3), round(precision_dt, 3), round(specificity_dt, 3)))
+```
+
+# Part Three: Discussion
+
+**Q1**
+
+A patient that is deemed low risk who later experiences a heart attack is called a false negative. Since the hospital faces severe lawsuits if their false negative rate is high, we should choose the model with the **lowest false negative rate/1-sensitivity**. 
+```{python}
+false_neg_KNN = 1 - recall_KNN
+false_neg_logit = 1 - recall_logit
+false_neg_dt = 1 - recall_dt
+
+print("False Negative KNN: {}\nFalse Negative Logit: {}\nFalse Negative Decision Tree: {}".format(round(false_neg_KNN, 3), round(false_neg_logit,3), round(false_neg_dt,3)))
+```
+
+I would recommend the **logistic regression model** to the hospital due to having the lowest false negative rate. The hospital should expect a false negative rate of **17.9%** based on this model.
+
+**Q2**
+
+Since the hospital only wants to use bed space for patients most in need of monitoring due to heart attack risk, we should use the model with the highest **precision**. If we go with a model with low precision, we would be unnecessarily subjecting patients who are not at risk of heart attacks to undergo further medical tests and treatments (false positives).
+```{python}
+print("Precision KNN: {}\nPrecision Logit: {}\nPrecision Decision Tree: {}".format(round(precision_KNN, 3), round(precision_logit,3), round(precision_dt,3)))
+```
+
+I would recommend the **KNN model** to the hospital due to having the highest precision. The hospital should expect a precision value of **0.812** based on this model.
+
+**Q3**
+
+For understanding which biological measures are associated with heart attack risk, I would recommend using the **logistic regression model**, as this model provides interpretable estimates of the variable coefficients. Regarding metrics, I would use the logistic regression model that gives me the highest **AUC score** in order to obtain the model with the best discriminative ability. This ensures that the model we choose is able to meaningfully discern heart attack vs. non-heart attack patients, and that our model's coefficients can be trusted.
+
+The hospital should expect an AUC score around **0.868** if they choose the logistic regression model.
+
+**Q4**
+
+Since the hospital would be training new doctors with the model we choose, I would recommend using the model with the highest overall **accuracy score**. Accuracy score is a useful metric when misclassification costs are symmetric for both target and nontarget cases. It seems like the doctors are not concerned with making specific mistakes, just the accuracy of their predictions.
+```{python}
+accuracy_KNN = cross_val_score(KNN_pipeline_final, X_KNN, y,
+                            cv=cv, scoring="accuracy").mean()
+
+accuracy_logit = cross_val_score(logit_pipeline_final, X, y,
+                            cv=cv, scoring="accuracy").mean()
+
+accuracy_dt = cross_val_score(dt_final, X, y,
+                            cv=cv, scoring="accuracy").mean()
+
+print("Accuracy KNN: {}\nAccuracy Logit: {}\nAccuracy Decision Tree: {}".format(round(accuracy_KNN, 3), round(accuracy_logit,3), round(accuracy_dt,3)))
+```
+
+Due to the **logistic regression model** having the highest accuracy score, I'd recommend the hospital use this model. The hospital should expect an accuracy score near **0.784** if they use this model.
+
+# Part Four: Validation
+
+Read in and transform new data:
+```{python}
+ha_validation = pd.read_csv("https://www.dropbox.com/s/jkwqdiyx6o6oad0/heart_attack_validation.csv?dl=1")
+ha_validation['cp'] = ha_validation['cp'].astype('object')
+ha_validation['restecg'] = ha_validation['restecg'].astype('object')
+
+ha_validation = pd.get_dummies(ha_validation)*1
+ha_validation['restecg_2'] = 0
+ha_validation.head()
+```
+
+Define X and y with new data:
+```{python}
+X_validation = ha_validation.drop(["output"], axis = 1)
+y_validation = ha_validation["output"]
+```
+
+```{python}
+X_validation.head()
+```
+
+```{python}
+y_validation.head()
+```
+
+## Predicting y with KNN model
+
+**Confusion matrix**
+```{python}
+X_KNN_validation = ha_validation[['age','trtbps', 'thalach', 'sex', 'cp_0', 'cp_1', 'cp_3', 'restecg_0', 'restecg_1', 'restecg_2']]
+
+ConfusionMatrixDisplay.from_estimator(KNN_fitted, X_KNN_validation, y_validation)
+```
+
+**ROC AUC, precision, recall**
+```{python}
+y_pred_KNN_validation = KNN_fitted.predict(X_KNN_validation)
+y_prob_KNN_validation = KNN_fitted.predict_proba(X_KNN_validation)[:, 1]
+
+rocauc_KNN_validation = roc_auc_score(y_validation, y_prob_KNN_validation)
+precision_KNN_validation = precision_score(y_validation, y_pred_KNN_validation)
+recall_KNN_validation = recall_score(y_validation, y_pred_KNN_validation)
+
+print("ROC AUC: {}\nPrecision: {}\nRecall: {}".format(round(rocauc_KNN_validation, 3), round(precision_KNN_validation, 3), round(recall_KNN_validation, 3)))
+```
+
+The ROC AUC is very similar to our cross-validated ROC AUC score for the KNN model reported in part 1 (0.844 vs. 0.856). Precision is higher than before (0.812 vs. 0.909), but recall has decreased quite a bit (0.76 vs. 0.526).
+
+## Predicting y with logistic regression model
+
+**Confusion matrix**
+```{python}
+ConfusionMatrixDisplay.from_estimator(logit_fitted, X_validation, y_validation)
+```
+
+**ROC AUC, precision, recall**
+```{python}
+y_pred_logit_validation = logit_fitted.predict(X_validation)
+y_prob_logit_validation = logit_fitted.predict_proba(X_validation)[:, 1]
+
+rocauc_logit_validation = roc_auc_score(y_validation, y_prob_logit_validation)
+precision_logit_validation = precision_score(y_validation, y_pred_logit_validation)
+recall_logit_validation = recall_score(y_validation, y_pred_logit_validation)
+
+print("ROC AUC: {}\nPrecision: {}\nRecall: {}".format(round(rocauc_logit_validation, 3), round(precision_logit_validation, 3), round(recall_logit_validation, 3)))
+```
+
+The ROC AUC and recall scores are very similar to that of our cross-validated scores for the logistic regression model reported in part 1 (0.868 vs. 0.885 for ROC AUC; 0.821 vs. 0.824 for recall). Precision is slightly higher than before (0.79 vs. 0.824).
+
+## Predicting y with decision tree model
+
+**Confusion matrix**
+```{python}
+ConfusionMatrixDisplay.from_estimator(dt_fitted, X_validation, y_validation)
+```
+
+**ROC AUC, precision, recall**
+```{python}
+y_pred_dt_validation = dt_fitted.predict(X_validation)
+y_prob_dt_validation = dt_fitted.predict_proba(X_validation)[:, 1]
+
+rocauc_dt_validation = roc_auc_score(y_validation, y_prob_dt_validation)
+precision_dt_validation = precision_score(y_validation, y_pred_dt_validation)
+recall_dt_validation = recall_score(y_validation, y_pred_dt_validation)
+
+print("ROC AUC: {}\nPrecision: {}\nRecall: {}".format(round(rocauc_dt_validation, 3), round(precision_dt_validation, 3), round(recall_dt_validation, 3)))
+```
+
+The ROC AUC, precision, and recall scores are even better (higher) for the validation data than that of our cross-validated scores for the decision tree model (0.827 vs. 0.902 for ROC AUC; 0.78 vs. 1.0 for precision; 0.734 vs. 0.737 for recall).
+
+Overall, I would say that the the measure of model success across all models did turn out to be approximately correct for the validation data.
+
+# Part Five: Cohen's Kappa
+```{python}
+kappa_KNN = cross_val_score(knn, X, y,
+                cv=cv, scoring="recall").mean()
+```
+
+
+
+
