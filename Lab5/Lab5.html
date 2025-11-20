@@ -2348,7 +2348,7 @@ window.Quarto = {
 
 <section id="import-libraries" class="level1">
 <h1>Import libraries</h1>
-<div id="d8219d17" class="cell" data-execution_count="1">
+<div id="b8ec8d63" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
@@ -2366,7 +2366,7 @@ window.Quarto = {
 <li>Read in the dataset, and display some summaries of the data</li>
 </ol>
 <p><strong>Read in data</strong></p>
-<div id="e8e16ebe" class="cell" data-execution_count="2">
+<div id="985fcb62" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>insurance <span class="op">=</span> pd.read_csv(<span class="st">&quot;https://www.dropbox.com/s/bocjjyo1ehr5auz/insurance_costs_1.csv?dl=1&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -2374,7 +2374,7 @@ window.Quarto = {
 </div>
 <p><strong>Summaries of data</strong></p>
 <p>Histogram of age:</p>
-<div id="8cd17a56" class="cell" data-execution_count="3">
+<div id="92a859fb" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>(ggplot(insurance,</span>
@@ -2395,7 +2395,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Frequency of sex:</p>
-<div id="b7aaa0d4" class="cell" data-execution_count="4">
+<div id="0e1d24cb" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>(ggplot(insurance,</span>
@@ -2417,7 +2417,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Histogram of BMI:</p>
-<div id="e2aecf00" class="cell" data-execution_count="5">
+<div id="b7381316" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>(ggplot(insurance,</span>
@@ -2438,7 +2438,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Frequency of smoking status:</p>
-<div id="0de1cd1c" class="cell" data-execution_count="6">
+<div id="cda7dcaf" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>(ggplot(insurance,</span>
@@ -2460,7 +2460,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Frequency of region:</p>
-<div id="280b3016" class="cell" data-execution_count="7">
+<div id="e2be8209" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>(ggplot(insurance,</span>
@@ -2482,7 +2482,7 @@ window.Quarto = {
 </div>
 </div>
 <p>Histogram of medical costs:</p>
-<div id="fc769d1f" class="cell" data-execution_count="8">
+<div id="419cb1e6" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>(ggplot(insurance,</span>
@@ -2506,7 +2506,7 @@ window.Quarto = {
 <li>Fix any concerns you have about the data.</li>
 </ol>
 <p><strong>Look for missing data</strong></p>
-<div id="66b44e56" class="cell" data-execution_count="9">
+<div id="e65674fb" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(insurance.isna().<span class="bu">sum</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -2523,7 +2523,7 @@ dtype: int64</code></pre>
 </div>
 <p>There appears to be no missing data.</p>
 <p><strong>Check variable types</strong></p>
-<div id="275a195a" class="cell" data-execution_count="10">
+<div id="d7a6259b" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(insurance.dtypes)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -2539,13 +2539,13 @@ dtype: object</code></pre>
 </div>
 </div>
 <p>The variable types are as expected, but we should transform the categorical variables sex, smoker, and region into dummy variables so we can use them in our regression analysis.</p>
-<div id="0bc41820" class="cell" data-execution_count="11">
+<div id="453e2c72" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>insurance_analysis <span class="op">=</span> pd.get_dummies(insurance)<span class="op">*</span><span class="dv">1</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>insurance_analysis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="50">
+<div class="cell-output cell-output-display" data-execution_count="11">
 <div>
 
 
@@ -2647,14 +2647,14 @@ dtype: object</code></pre>
 <li>Make up to three plots comparing the response variable (charges) to one of the predictor variables. Briefly discuss each plot.</li>
 </ol>
 <p>First, I am going to make a new variable that contains the log transformed values of medical charges, as this variable’s distribution was highly skewed. This allows for improvement in our predictions later when we do analysis and better interpretability in terms of scatter plots.</p>
-<div id="138f0204" class="cell" data-execution_count="12">
+<div id="6ad8e6a2" class="cell" data-execution_count="12">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>insurance[<span class="st">&quot;log_charges&quot;</span>] <span class="op">=</span> np.log(insurance[<span class="st">&quot;charges&quot;</span>])</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>insurance_analysis[<span class="st">&quot;log_charges&quot;</span>] <span class="op">=</span> np.log(insurance_analysis[<span class="st">&quot;charges&quot;</span>])</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>insurance.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="51">
+<div class="cell-output cell-output-display" data-execution_count="12">
 <div>
 
 
@@ -2729,7 +2729,7 @@ dtype: object</code></pre>
 </div>
 </div>
 <p><strong>Charges vs. Sex</strong></p>
-<div id="39b4ad6e" class="cell" data-execution_count="13">
+<div id="83b7ce74" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>(ggplot(insurance,</span>
@@ -2752,7 +2752,7 @@ dtype: object</code></pre>
 </div>
 </div>
 <p><strong>Log(Charges) vs. BMI</strong></p>
-<div id="ff5443ac" class="cell" data-execution_count="14">
+<div id="d4ec9ac8" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>(ggplot(insurance,</span>
@@ -2774,7 +2774,7 @@ dtype: object</code></pre>
 </div>
 </div>
 <p><strong>Charges vs. Smoking Status</strong></p>
-<div id="36957378" class="cell" data-execution_count="15">
+<div id="f92c578d" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>(ggplot(insurance,</span>
@@ -2808,7 +2808,7 @@ dtype: object</code></pre>
 <ol type="1">
 <li>Construct a simple linear model to predict the insurance charges from the beneficiary’s age. Discuss the model fit, and interpret the coefficient estimates.</li>
 </ol>
-<div id="d00738e3" class="cell" data-execution_count="16">
+<div id="15d1f3ae" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>X_train<span class="op">=</span>insurance_analysis[[<span class="st">&quot;age&quot;</span>]]</span>
@@ -2847,7 +2847,7 @@ dtype: object</code></pre>
 <ol start="2" type="1">
 <li>Make a model that also incorporates the variable sex. Report your results.</li>
 </ol>
-<div id="a6995164" class="cell" data-execution_count="17">
+<div id="f9b62629" class="cell" data-execution_count="17">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>X_train<span class="op">=</span>insurance_analysis[[<span class="st">&quot;age&quot;</span>, <span class="st">&quot;sex_female&quot;</span>]]</span>
@@ -2887,7 +2887,7 @@ dtype: object</code></pre>
 <ol start="3" type="1">
 <li>Now make a model that does not include sex, but does include smoker. Report your results.</li>
 </ol>
-<div id="1c447483" class="cell" data-execution_count="18">
+<div id="f98ec532" class="cell" data-execution_count="18">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>X_train<span class="op">=</span>insurance_analysis[[<span class="st">&quot;age&quot;</span>, <span class="st">&quot;smoker_yes&quot;</span>]]</span>
@@ -2944,7 +2944,7 @@ dtype: object</code></pre>
 <ol type="1">
 <li>Fit a model that uses age and bmi as predictors. Report your results. How does the MSE compare to the model in Part Two Q1? How does the R-squared compare?</li>
 </ol>
-<div id="71f1dc45" class="cell" data-execution_count="19">
+<div id="f87bb8c4" class="cell" data-execution_count="19">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>X_train<span class="op">=</span>insurance_analysis[[<span class="st">&quot;age&quot;</span>, <span class="st">&quot;bmi&quot;</span>]]</span>
@@ -2987,13 +2987,13 @@ dtype: object</code></pre>
 <li>Perhaps the relationships are not linear. Fit a model that uses age and age^2 as predictors. How do the MSE and R-squared compare to the model in P2 Q1?</li>
 </ol>
 <p>First, let’s create the age^2 variable and add that to our data frame.</p>
-<div id="1857673c" class="cell" data-execution_count="20">
+<div id="1883cf73" class="cell" data-execution_count="20">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>insurance_analysis[<span class="st">&quot;age_square&quot;</span>] <span class="op">=</span> insurance_analysis[<span class="st">&quot;age&quot;</span>]<span class="op">**</span><span class="dv">2</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>insurance_analysis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="59">
+<div class="cell-output cell-output-display" data-execution_count="20">
 <div>
 
 
@@ -3104,7 +3104,7 @@ dtype: object</code></pre>
 </div>
 </div>
 <p>Now, we can run the polynomial regression analysis.</p>
-<div id="49d9bfd3" class="cell" data-execution_count="21">
+<div id="a0291a5c" class="cell" data-execution_count="21">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>X_train<span class="op">=</span>insurance_analysis[[<span class="st">&quot;age&quot;</span>, <span class="st">&quot;age_square&quot;</span>]]</span>
@@ -3134,14 +3134,14 @@ dtype: object</code></pre>
 <li>Fit a polynomial model of degree 4. How do the MSE and R-squared compare to the model in P2 Q1?</li>
 </ol>
 <p>First, let’s create the age^3 and age^4 variable and add that to our data frame.</p>
-<div id="09f3ec39" class="cell" data-execution_count="22">
+<div id="870ee286" class="cell" data-execution_count="22">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>insurance_analysis[<span class="st">&quot;age_cubed&quot;</span>] <span class="op">=</span> insurance_analysis[<span class="st">&quot;age&quot;</span>]<span class="op">**</span><span class="dv">3</span></span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>insurance_analysis[<span class="st">&quot;age_pwr_four&quot;</span>] <span class="op">=</span> insurance_analysis[<span class="st">&quot;age&quot;</span>]<span class="op">**</span><span class="dv">4</span></span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>insurance_analysis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="61">
+<div class="cell-output cell-output-display" data-execution_count="22">
 <div>
 
 
@@ -3264,7 +3264,7 @@ dtype: object</code></pre>
 </div>
 </div>
 <p>Now, we can run the polynomial regression analysis.</p>
-<div id="415140fe" class="cell" data-execution_count="23">
+<div id="15649977" class="cell" data-execution_count="23">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>X_train<span class="op">=</span>insurance_analysis[[<span class="st">&quot;age&quot;</span>, <span class="st">&quot;age_square&quot;</span>, <span class="st">&quot;age_cubed&quot;</span>, <span class="st">&quot;age_pwr_four&quot;</span>]]</span>
@@ -3295,7 +3295,7 @@ dtype: object</code></pre>
 <li>Fit a polynomial model of degree 12. How do the MSE and R-squared compare to the model in P2 Q1?</li>
 </ol>
 <p>First, let’s create the age^5 through age^12 variables and add that to our data frame.</p>
-<div id="95537df6" class="cell" data-execution_count="24">
+<div id="d39cafa6" class="cell" data-execution_count="24">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>insurance_analysis[<span class="st">&quot;age_pwr_five&quot;</span>] <span class="op">=</span> insurance_analysis[<span class="st">&quot;age&quot;</span>]<span class="op">**</span><span class="dv">5</span></span>
@@ -3308,7 +3308,7 @@ dtype: object</code></pre>
 <span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>insurance_analysis[<span class="st">&quot;age_pwr_twelve&quot;</span>] <span class="op">=</span> insurance_analysis[<span class="st">&quot;age&quot;</span>]<span class="op">**</span><span class="dv">12</span></span>
 <span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>insurance_analysis.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="63">
+<div class="cell-output cell-output-display" data-execution_count="24">
 <div>
 
 
@@ -3468,7 +3468,7 @@ dtype: object</code></pre>
 </div>
 </div>
 <p>Now, we can run the polynomial regression analysis.</p>
-<div id="5018f69c" class="cell" data-execution_count="25">
+<div id="2ab13f7e" class="cell" data-execution_count="25">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>X_train<span class="op">=</span>insurance_analysis[[<span class="st">&quot;age&quot;</span>, <span class="st">&quot;age_square&quot;</span>, <span class="st">&quot;age_cubed&quot;</span>, <span class="st">&quot;age_pwr_four&quot;</span>, <span class="st">&quot;age_pwr_five&quot;</span>, <span class="st">&quot;age_pwr_six&quot;</span>, <span class="st">&quot;age_pwr_seven&quot;</span>, <span class="st">&quot;age_pwr_eight&quot;</span>, <span class="st">&quot;age_pwr_nine&quot;</span>, <span class="st">&quot;age_pwr_ten&quot;</span>, <span class="st">&quot;age_pwr_eleven&quot;</span>, <span class="st">&quot;age_pwr_twelve&quot;</span>]]</span>
@@ -3504,7 +3504,7 @@ dtype: object</code></pre>
 <ol start="6" type="1">
 <li>Plot the predictions from your model in Q4 as a line plot on top of the scatterplot of your original data.</li>
 </ol>
-<div id="087d2909" class="cell" data-execution_count="26">
+<div id="6c612ec2" class="cell" data-execution_count="26">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>X_new <span class="op">=</span> pd.DataFrame()</span>
@@ -3547,7 +3547,7 @@ dtype: object</code></pre>
 <section id="part-four-new-data" class="level1">
 <h1>Part Four: New data</h1>
 <p><strong>Read in new dataset:</strong></p>
-<div id="50b405fe" class="cell" data-execution_count="27">
+<div id="03cfc9d6" class="cell" data-execution_count="27">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>new_insurance <span class="op">=</span> pd.read_csv(<span class="st">&quot;https://www.dropbox.com/s/sky86agc4s8c6qe/insurance_costs_2.csv?dl=1&quot;</span>)</span>
@@ -3555,7 +3555,7 @@ dtype: object</code></pre>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>new_insurance[<span class="st">&quot;log_charges&quot;</span>] <span class="op">=</span> np.log(new_insurance[<span class="st">&quot;charges&quot;</span>])</span>
 <span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>new_insurance.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="66">
+<div class="cell-output cell-output-display" data-execution_count="27">
 <div>
 
 
@@ -3660,7 +3660,7 @@ dtype: object</code></pre>
 </div>
 </div>
 <p><strong>Transform both training and validation data sets to account for interaction terms</strong></p>
-<div id="52ac4b1e" class="cell" data-execution_count="28">
+<div id="91ef317e" class="cell" data-execution_count="28">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co">#age and smoker interaction</span></span>
@@ -3673,7 +3673,7 @@ dtype: object</code></pre>
 </details>
 </div>
 <p><strong>Fit models</strong></p>
-<div id="bb7c07c6" class="cell" data-execution_count="29">
+<div id="a8681262" class="cell" data-execution_count="29">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>y_train <span class="op">=</span> insurance_analysis[<span class="st">&quot;log_charges&quot;</span>]</span>
@@ -3701,7 +3701,7 @@ dtype: object</code></pre>
 <span id="cb38-23"><a href="#cb38-23" aria-hidden="true" tabindex="-1"></a>test_error <span class="op">=</span> pd.DataFrame(rows)</span>
 <span id="cb38-24"><a href="#cb38-24" aria-hidden="true" tabindex="-1"></a>test_error</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="68">
+<div class="cell-output cell-output-display" data-execution_count="29">
 <div>
 
 
@@ -3754,13 +3754,13 @@ dtype: object</code></pre>
 <p>According to each models’ MSE values, the best model to use is the one using age, bmi, smoking status, and the interaction between age and smoking status and bmi and smoking status as predictors (model five).</p>
 <p><strong>Plot of final chosen model</strong></p>
 <p>First let’s calculate the residuals and add this to our data frame:</p>
-<div id="1022d145" class="cell" data-execution_count="30">
+<div id="aa292dd3" class="cell" data-execution_count="30">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>new_insurance[<span class="st">&quot;resid_mdl_5&quot;</span>] <span class="op">=</span> new_insurance[<span class="st">&quot;log_charges&quot;</span>] <span class="op">-</span> new_insurance[<span class="st">&quot;Model 5_predict&quot;</span>]</span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>new_insurance.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="69">
+<div class="cell-output cell-output-display" data-execution_count="30">
 <div>
 
 
@@ -3913,7 +3913,7 @@ dtype: object</code></pre>
 </div>
 </div>
 <p>Now we can plot the residuals vs. fitted (predicted) values:</p>
-<div id="051ea143" class="cell" data-execution_count="31">
+<div id="7d8a4987" class="cell" data-execution_count="31">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>(ggplot(new_insurance,</span>
@@ -3940,7 +3940,7 @@ dtype: object</code></pre>
 <p><strong>Start with strongest model from previous part</strong></p>
 <p>In part 4, we already found that the strongest model thus far is the model that includes age, bmi, smoking status, and the interaction between age and smoking status and bmi and smoking status as predictors. We can explore adding polynomial terms and/or more variables to this model to determine whether adding complexity provides meaningful improvement to the model.</p>
 <p>First let’s try adding additional variables to our model:</p>
-<div id="8fc0fefc" class="cell" data-execution_count="32">
+<div id="62a7ad27" class="cell" data-execution_count="32">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>y_train <span class="op">=</span> insurance_analysis[<span class="st">&quot;log_charges&quot;</span>]</span>
@@ -3991,7 +3991,7 @@ dtype: object</code></pre>
 </div>
 <p>It appears that adding the sex variable (model six) to our model improves the model’s fit on the new data. Therefore, we will use this model going forward. Now, we can explore adding interaction terms between age, sex, and bmi.</p>
 <p>First we need to define our interaction terms in the data sets:</p>
-<div id="6a98d848" class="cell" data-execution_count="33">
+<div id="3353f8bf" class="cell" data-execution_count="33">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>insurance_analysis[<span class="st">&quot;age_sexFemale&quot;</span>] <span class="op">=</span> insurance_analysis[<span class="st">&quot;age&quot;</span>]<span class="op">*</span>insurance_analysis[<span class="st">&quot;sex_female&quot;</span>]</span>
@@ -4002,7 +4002,7 @@ dtype: object</code></pre>
 </details>
 </div>
 <p>Now we can add these interaction terms to our models:</p>
-<div id="8acdfcf1" class="cell" data-execution_count="34">
+<div id="953f3599" class="cell" data-execution_count="34">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>y_train <span class="op">=</span> insurance_analysis[<span class="st">&quot;log_charges&quot;</span>]</span>
@@ -4054,7 +4054,7 @@ dtype: object</code></pre>
 <p>Given the above plot, model seven with the age and sex interaction variable appears to have the lowest test MSE. Model nine with age and sex and bmi and sex interaction variables has a similar test MSE, but I would like to avoid making my final model too complex so I will move forward with model seven.</p>
 <p>Finally, we can explore whether adding polynomial terms for age and bmi improves the fit of our model even more than before.</p>
 <p>First, we must define these polynomial terms in our data frames:</p>
-<div id="90dd532d" class="cell" data-execution_count="35">
+<div id="eb709640" class="cell" data-execution_count="35">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>insurance_analysis[<span class="st">&quot;bmi_squared&quot;</span>] <span class="op">=</span> insurance_analysis[<span class="st">&quot;bmi&quot;</span>]<span class="op">**</span><span class="dv">2</span></span>
@@ -4068,7 +4068,7 @@ dtype: object</code></pre>
 </div>
 <p>Now we can add them to our models:</p>
 <p><strong>Second order polynomial models</strong></p>
-<div id="198a5998" class="cell" data-execution_count="36">
+<div id="b17b5bda" class="cell" data-execution_count="36">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>y_train <span class="op">=</span> insurance_analysis[<span class="st">&quot;log_charges&quot;</span>]</span>
@@ -4120,7 +4120,7 @@ dtype: object</code></pre>
 </div>
 <p>Adding age squared and bmi squared terms to our model (model twelve) seems to have reduced our test MSE from the previous model. Therefore, we will use this model going forward.</p>
 <p><strong>Third order polynomial models</strong></p>
-<div id="c91c563e" class="cell" data-execution_count="37">
+<div id="3d728539" class="cell" data-execution_count="37">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>y_train <span class="op">=</span> insurance_analysis[<span class="st">&quot;log_charges&quot;</span>]</span>
@@ -4173,13 +4173,13 @@ dtype: object</code></pre>
 <p>It appears that adding third order polynomials to our models does not improve test MSE by a substantial amount. Therefore, I will choose model twelve with age, bmi, smoking status, sex, age, bmi, and smoking status interactions, age, bmi, and sex interactions, age-squared, and bmi-squared as the predictors as my final model due to this model having the smallest test MSE.</p>
 <p><strong>Residual plot of model twelve</strong></p>
 <p>First let’s calculate the residuals and add this to our data frame:</p>
-<div id="250c2f97" class="cell" data-execution_count="38">
+<div id="56314cbc" class="cell" data-execution_count="38">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>new_insurance[<span class="st">&quot;resid_mdl_12&quot;</span>] <span class="op">=</span> new_insurance[<span class="st">&quot;log_charges&quot;</span>] <span class="op">-</span> new_insurance[<span class="st">&quot;Model 12_predict&quot;</span>]</span>
 <span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>new_insurance.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="77">
+<div class="cell-output cell-output-display" data-execution_count="38">
 <div>
 
 
@@ -4339,7 +4339,7 @@ dtype: object</code></pre>
 </div>
 </div>
 <p>Now we can plot the residuals vs. fitted (predicted) values:</p>
-<div id="b0f97564" class="cell" data-execution_count="39">
+<div id="cc3711a7" class="cell" data-execution_count="39">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>(ggplot(new_insurance,</span>

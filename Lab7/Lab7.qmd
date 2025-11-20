@@ -19,7 +19,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_predict
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay, make_scorer, recall_score, roc_auc_score, precision_score, cohen_kappa_score
+from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay, make_scorer, recall_score, roc_auc_score, precision_score, cohen_kappa_score, make_scorer
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.tree import DecisionTreeClassifier
@@ -294,7 +294,7 @@ print("Best params:", grid_search.best_params_)
 ```{python}
 plt.figure(figsize=(20,10))
 dt_final = grid_search.best_estimator_
-tree.plot_tree(dt_final, feature_names = X.columns, filled = True, rounded = True, fontsize = 10)
+tree.plot_tree(dt_final, feature_names = X.columns, filled = True, rounded = True, fontsize = 10);
 ```
 
 The best decision tree model is the model with a **cost complexity parameter of 0.002**, **max depth of 4**, **8 minimum samples per leaf**, and **chest pain type 0, maximum heart rate achieved during exercise, age, sex, resting blood pressure**, and **cholesterol** as features due to having the highest cross-validated **AUC score = 0.827**.
@@ -549,10 +549,25 @@ Overall, I would say that the the measure of model success across all models did
 
 # Part Five: Cohen's Kappa
 ```{python}
-kappa_KNN = cross_val_score(knn, X, y,
-                cv=cv, scoring="recall").mean()
+kappa_KNN = cross_val_score(KNN_pipeline_final, X_KNN, y,
+                cv=cv, scoring=make_scorer(cohen_kappa_score)).mean()
+
+kappa_logit = cross_val_score(logit_pipeline_final, X, y,
+                cv=cv, scoring=make_scorer(cohen_kappa_score)).mean()
+
+kappa_dt = cross_val_score(dt_final, X, y,
+                cv=cv, scoring=make_scorer(cohen_kappa_score)).mean()
+
+print("CK KNN: {}\nCK Logit: {}\nCK Decision Tree: {}".format(round(kappa_KNN, 3), round(kappa_logit, 3), round(kappa_dt, 3)))
 ```
 
+Cohen's Kappa is a statistic that measures the level of agreement between the classifications of raters/judges, accounting for the fact that the raters may agree on some classifications by chance. I believe that this statistic is highly useful for the situation mentioned in part three Q4: 
+
+The hospital is training a new batch of doctors, and they would like to compare the diagnoses of these doctors to the predictions given by the algorithm to measure the ability of new doctors to diagnose patients.
+
+Using a Cohen's Kappa for these types of situations would allow for the doctors in training to get a sense of how close in agreement their diagnoses are to the algorithm chosen rather than simply relying on overall model accuracy. Especially in a medical context, producing reproducible and consistent diagnoses is very important to accurately diagnosing patients.
+
+If I were to use the highest Cohen's Kappa value to choose the best model (logistic regression model), only my conclusion for Q2 in part three changes. It makes sense that the rest of the answers did not change, as in part four, I found that the logistic regression model's cross-validated measures of model success were very close to that of the metrics for the validation data. Therefore, we would expect the largest Cohen's Kappa for the logistic regression model as our predicted y values are in moderate agreement with our actual y values (logistic regression model has the highest overall accuracy score), and this result is consistent when applied to new data as well.
 
 
 
