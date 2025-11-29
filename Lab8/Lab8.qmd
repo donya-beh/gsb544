@@ -1,0 +1,459 @@
+---
+title: "Lab 8"
+author: "Donya Behroozi"
+embed-resources: true
+code-fold: true
+format: html
+toc: true
+---
+# Load libraries 
+```{python}
+import pandas as pd
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.model_selection import cross_val_score
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
+from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+```
+
+# Read in data
+```{python}
+cannabis = pd.read_csv("/Users/donyabehroozi/Downloads/cannabis_full.csv")
+cannabis = cannabis.dropna()
+cannabis.head()
+```
+
+# Part One: Binary Classification
+
+Dataset that only contains indica and sativa types
+```{python}
+cannabis_filtered = cannabis[(cannabis["Type"]=="indica") | (cannabis["Type"]=="sativa")]
+cannabis_filtered.head()
+```
+
+**Note**: Since there is no target category identified for this problem, I will be using overall accuracy rate as my model metric for all questions in this section because this metric accounts for the overall proportion of observations that are classified correctly for both the target and non-target classes.
+
+Define X and y:
+```{python}
+X = cannabis_filtered.drop(['Strain', 'Type', 'Effects', 'Flavor'], axis = 1)
+y = cannabis_filtered['Type']
+```
+
+```{python}
+X.head()
+```
+
+```{python}
+y.head()
+```
+
+## Q1: LDA
+
+Preprocessing:
+```{python}
+preprocessing = ColumnTransformer(
+    [("scale", StandardScaler(), ["Rating"])],
+    remainder="passthrough"
+).set_output(transform="pandas")
+
+preprocessing.fit_transform(X)
+```
+
+LDA:
+
+**Note**: There are no hyperparameters to tune within the LDA function (as far as we have learned), so I will simply tune the preprocessing step to determine the best scaler. 
+```{python}
+lda_model = Pipeline([
+    ("preprocessing", preprocessing),
+    ("lda", LinearDiscriminantAnalysis())
+])
+
+#define parameter space
+param_grid = {
+    "preprocessing__scale":[StandardScaler(), MinMaxScaler()] #choice of scaler
+}
+
+#perform grid search
+grid_search = GridSearchCV(
+    lda_model,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best LDA model is the one using a standard scaler for the "Rating" variable due to having the largest cross-validated accuracy (0.86).
+
+Define final best LDA model:
+```{python}
+lda_final_model = Pipeline([
+    ("preprocessing", preprocessing),
+    ("lda", LinearDiscriminantAnalysis())
+])
+
+lda_model_fitted = lda_final_model.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(lda_model_fitted, X, y)
+```
+
+## Q2: QDA
+
+**Note**: There are no hyperparameters to tune within the QDA function (as far as we have learned), so I will simply tune the preprocessing step to determine the best scaler. 
+```{python}
+#| warning: False
+qda_model = Pipeline([
+    ("preprocessing", preprocessing),
+    ("qda", QuadraticDiscriminantAnalysis())
+])
+
+#define parameter space
+param_grid = {
+    "preprocessing__scale":[StandardScaler(), MinMaxScaler()] #choice of scaler
+}
+
+#perform grid search
+grid_search = GridSearchCV(
+    qda_model,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best QDA model is the one using a min-max scaler for the "Rating" variable due to having the largest cross-validated accuracy (0.439).
+
+Define final best QDA model:
+```{python}
+#| warning: False
+#redefine preprocessing step with min-max scaler
+preprocessing_min_max = ColumnTransformer(
+    [("scale", MinMaxScaler(), ["Rating"])],
+    remainder="passthrough"
+    )
+
+qda_final_model = Pipeline([
+    ("preprocessing", preprocessing_min_max),
+    ("qda", QuadraticDiscriminantAnalysis())
+])
+
+qda_model_fitted = qda_final_model.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(qda_model_fitted, X, y)
+```
+
+## Q3: SVC
+
+Hyperparameter tuning:
+```{python}
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+'svc__C': [0.01, 0.1, 1, 10, 100]}
+
+#perform grid search
+svc_model = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True))])
+
+grid_search = GridSearchCV(
+    svc_model,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best SVC model is the one using a standard scaler for the "Rating" variable and a regularization strength value (C) of 0.1 due to having the largest cross-validated accuracy (0.869).
+
+Define final best SVC model:
+```{python}
+#redefine preprocessing step with min-max scaler
+svc_final_model = Pipeline([
+    ("preprocessing", preprocessing),
+    ("svc", SVC(kernel = "linear", probability = True, C = 0.1))])
+
+svc_model_fitted = svc_final_model.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(svc_model_fitted, X, y)
+```
+
+## Q4: SVM
+
+Hyperparameter tuning:
+```{python}
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+'svm__C': [0.01, 0.1, 1, 10, 100],
+'svm__degree': [2,4,6,8,10]}
+
+#perform grid search
+svm_model = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svm", SVC(kernel="poly", probability=True))])
+
+grid_search = GridSearchCV(
+    svm_model,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best SVM model is the one using a min-max scaler for the "Rating" variable, a regularization value (C) = 1, and degree = 6 due to having the largest cross-validated accuracy (0.87).
+
+Define final best SVM model:
+```{python}
+#redefine preprocessing step with min-max scaler
+svm_final_model = Pipeline([
+    ("preprocessing", preprocessing_min_max),
+    ("svm", SVC(kernel = "poly", probability = True, C = 1, degree=6))])
+
+svm_model_fitted = svm_final_model.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(svm_model_fitted, X, y)
+```
+
+# Part Two: Natural Multiclass
+
+Full dataset:
+```{python}
+cannabis.head()
+```
+
+Define X and y:
+```{python}
+X = cannabis.drop(['Strain', 'Type', 'Effects', 'Flavor'], axis = 1)
+y = cannabis['Type']
+```
+
+```{python}
+X.head()
+```
+
+```{python}
+y.head()
+```
+
+## Q1: Decision tree
+
+Tune hyperparameters:
+```{python}
+dt = DecisionTreeClassifier(random_state = 321)
+
+paramGrid = {
+    'ccp_alpha': dt.cost_complexity_pruning_path(X, y).ccp_alphas, 
+    'max_depth': range(1, 10+1), 
+    'min_samples_leaf': range(1, 10+1)
+}
+
+grid_search = GridSearchCV(dt, 
+                      paramGrid, 
+                      cv = 5, 
+                      scoring = 'accuracy', 
+                      n_jobs = -1)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best decision tree is the one using a cost complexity value of approximately 0.0031, max depth of 3, and minimum samples per leaf = 1 due to having the largest cross-validated accuracy score (0.625).
+
+Define best tree:
+```{python}
+dt_final = DecisionTreeClassifier(ccp_alpha = 0.0030597287744541513, max_depth = 3, min_samples_leaf = 1, random_state = 321)
+
+dt_final_fitted = dt_final.fit(X, y)
+```
+
+Display tree:
+```{python}
+plt.figure(figsize=(20,10))
+tree.plot_tree(dt_final_fitted, feature_names = X.columns, filled = True, rounded = True, fontsize = 10);
+```
+
+```{python}
+dt_final.classes_
+```
+
+"Sleepy" and "energetic" strains are primarily identified as the hybrid type. Strains that are described as "sleepy" and "relaxed" are primarily identified as the sativa type. However, strains that are "sleepy" and not "relaxed" are identified as the hybrid type. Strains that are not "sleepy" but described as having a "citrus" flavor are identified as primarily the indica type. On the other hand, strains that are not described as "sleepy" nor with a "citrus" flavor are primarily identified as a hybrid type but indica comes in a close second.
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(dt_final_fitted, X, y)
+```
+
+## Q2: LDA
+```{python}
+lda_model2 = Pipeline([
+    ("preprocessing", preprocessing),
+    ("lda", LinearDiscriminantAnalysis())
+])
+
+#define parameter space
+param_grid = {
+    "preprocessing__scale":[StandardScaler(), MinMaxScaler()] #choice of scaler
+}
+
+#perform grid search
+grid_search = GridSearchCV(
+    lda_model2,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best LDA model is the one using a standard scaler for the "Rating" variable due to having the largest cross-validated accuracy (0.628).
+
+Define final best LDA model:
+```{python}
+lda_final_model2 = Pipeline([
+    ("preprocessing", preprocessing),
+    ("lda", LinearDiscriminantAnalysis())
+])
+
+lda_model2_fitted = lda_final_model2.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(lda_model2_fitted, X, y)
+```
+
+## Q2: QDA
+```{python}
+#| warning: False
+qda_model2 = Pipeline([
+    ("preprocessing", preprocessing),
+    ("qda", QuadraticDiscriminantAnalysis())
+])
+
+#define parameter space
+param_grid = {
+    "preprocessing__scale":[StandardScaler(), MinMaxScaler()] #choice of scaler
+}
+
+#perform grid search
+grid_search = GridSearchCV(
+    qda_model2,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best QDA model is the one using a min-max scaler for the "Rating" variable due to having the largest cross-validated accuracy (0.236).
+
+Define final best QDA model:
+```{python}
+#| warning: False
+#redefine preprocessing step with min-max scaler
+preprocessing_min_max = ColumnTransformer(
+    [("scale", MinMaxScaler(), ["Rating"])],
+    remainder="passthrough"
+    )
+
+qda_final_model2 = Pipeline([
+    ("preprocessing", preprocessing_min_max),
+    ("qda", QuadraticDiscriminantAnalysis())
+])
+
+qda_model2_fitted = qda_final_model2.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(qda_model2_fitted, X, y)
+```
+
+## Q2: KNN
+```{python}
+#define pipeline
+KNN_model = Pipeline([
+    ("preprocessing", preprocessing),
+    ("knn", KNeighborsClassifier())
+])
+
+#define parameter space
+param_grid = {
+    "preprocessing__scale":[StandardScaler(), MinMaxScaler()], #choice of scaler
+    "knn__n_neighbors": list(range(1,20+1)), #choice of k
+    "knn__p": [1,2], #choice of distance (1 = Manhattan, 2 = Euclidean)
+}
+
+#perform grid search
+grid_search = GridSearchCV(
+    KNN_model,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best KNN model is the one using a standard scaler for the "Rating" variable, k = 17 neighbors, and Euclidean distance due to having the largest cross-validated accuracy (0.611).
+
+Define best KNN model:
+```{python}
+KNN_model_final = Pipeline([
+    ("preprocessing", preprocessing),
+    ("knn", KNeighborsClassifier(n_neighbors=17, p = 2))
+])
+
+KNN_model_fitted = KNN_model_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(KNN_model_fitted, X, y)
+```
+
+## Q3
+
+My metrics were worse than in part one across all of my models. This makes sense as the models are not predicting a binary target variable anymore, they are predicting for a multiclass target variable. Therefore, the multiclass classification models are more prone to errors than the binary classification models as there is more than one class of the target variable that the model can incorrectly identify. According to the confusion matrices in this section, it appears that each model made the most errors distinguishing between hybrid and indica or sativa types. This is expected though, as hybrid strains of cannabis are created by crossbreeding indica and sativa plants, so they are essentially a blend of both plant's effects. Therefore, it makes sense that the models are misclassifying hybrid types as indica or sativa types and vice versa as hybrid types are created from indica/sativa strains.
+
