@@ -14,12 +14,13 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import ConfusionMatrixDisplay, make_scorer, accuracy_score
 import matplotlib.pyplot as plt
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
 ```
 
 # Read in data
@@ -457,3 +458,650 @@ ConfusionMatrixDisplay.from_estimator(KNN_model_fitted, X, y)
 
 My metrics were worse than in part one across all of my models. This makes sense as the models are not predicting a binary target variable anymore, they are predicting for a multiclass target variable. Therefore, the multiclass classification models are more prone to errors than the binary classification models as there is more than one class of the target variable that the model can incorrectly identify. According to the confusion matrices in this section, it appears that each model made the most errors distinguishing between hybrid and indica or sativa types. This is expected though, as hybrid strains of cannabis are created by crossbreeding indica and sativa plants, so they are essentially a blend of both plant's effects. Therefore, it makes sense that the models are misclassifying hybrid types as indica or sativa types and vice versa as hybrid types are created from indica/sativa strains.
 
+# Part Three: Multiclass from Binary
+
+## Q1: Indica vs. Not Indica
+
+Create new column in dataset for indica dummy variable:
+```{python}
+cannabis["indica"] = (cannabis["Type"]=="indica")*1
+cannabis.head()
+```
+
+Define X and y:
+```{python}
+X = cannabis.drop(['Strain', 'Type', 'Effects', 'Flavor', 'indica'], axis = 1)
+y = cannabis['indica']
+```
+
+```{python}
+X.head()
+```
+
+```{python}
+y.head()
+```
+
+**SVC**
+```{python}
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+'svc__C': [0.01, 0.1, 1, 10, 100]}
+
+#perform grid search
+svc_model_ovr = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True))])
+
+grid_search = GridSearchCV(
+    svc_model_ovr,
+    param_grid=param_grid,
+    scoring="f1",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best F1 score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best SVC model for this OvR approach is the one using a standard scaler for the "Rating" variable and a regularization strength value (C) of 0.1 due to having the largest F1 score (0.662).
+
+Define best SVC model:
+```{python}
+svc_ovr_final = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True, C = 0.1))])
+
+svc_ovr_fitted = svc_ovr_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(svc_ovr_final, X, y)
+```
+
+**Logistic Regression**
+
+To choose the best logistic regression model, I will determine which penalty (Ridge, Lasso, Elastic Net), regularization strength (C), and type of scaling (standard, min-max) will result in the largest F1 score.
+
+```{python}
+#| warning: False
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+"logit__penalty":["l1", "l2", "elasticnet"],
+"logit__C":[0.001, 0.01, 0.1, 1, 10],
+"logit__l1_ratio": [0.0, 0.25, 0.5, 0.75, 1.0]}
+
+#perform grid search
+logit_model = Pipeline(
+  [("preprocessing", preprocessing),
+  ("logit", LogisticRegression(solver = "saga", max_iter = 5000, random_state=321))])
+
+grid_search = GridSearchCV(
+    logit_model,
+    param_grid=param_grid,
+    scoring="f1",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best F1 score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best logistic regression model for this OvR approach is the one using a min-max scaler for the "Rating" variable, an elastic net penalty with l1 ratio = 0.75, and regularization strength value (C) of 0.1 due to having the largest F1 score (0.659).
+
+Define best logistic regression model:
+```{python}
+logit_model_final = Pipeline(
+  [("preprocessing", preprocessing_min_max),
+  ("logit", LogisticRegression(C = 0.1, l1_ratio=0.75, penalty="elasticnet", solver = "saga", random_state=321))])
+
+logit_final_fitted = logit_model_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(logit_final_fitted, X, y)
+```
+
+## Q1: Sativa vs. Not Sativa
+
+Create new column in dataset for sativa dummy variable:
+```{python}
+cannabis["sativa"] = (cannabis["Type"]=="sativa")*1
+cannabis.head()
+```
+
+Define X and y:
+```{python}
+X = cannabis.drop(['Strain', 'Type', 'Effects', 'Flavor', 'indica', 'sativa'], axis = 1)
+y = cannabis['sativa']
+```
+
+```{python}
+X.head()
+```
+
+```{python}
+y.head()
+```
+
+**SVC**
+```{python}
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+'svc__C': [0.01, 0.1, 1, 10, 100]}
+
+#perform grid search
+svc_model_ovr2 = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True))])
+
+grid_search = GridSearchCV(
+    svc_model_ovr2,
+    param_grid=param_grid,
+    scoring="f1",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best F1 score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best SVC model for this OvR approach is the one using a min-max scaler for the "Rating" variable and a regularization strength value (C) of 100 due to having the largest F1 score (0.296).
+
+Define best SVC model:
+```{python}
+svc_ovr2_final = Pipeline(
+  [("preprocessing", preprocessing_min_max),
+  ("svc", SVC(kernel="linear", probability=True, C = 100))])
+
+svc_ovr2_fitted = svc_ovr2_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(svc_ovr2_final, X, y)
+```
+
+**Logistic Regression**
+```{python}
+#| warning: False
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+"logit__penalty":["l1", "l2", "elasticnet"],
+"logit__C":[0.001, 0.01, 0.1, 1, 10],
+"logit__l1_ratio": [0.0, 0.25, 0.5, 0.75, 1.0]}
+
+#perform grid search
+logit_model2 = Pipeline(
+  [("preprocessing", preprocessing),
+  ("logit", LogisticRegression(solver = "saga", max_iter = 5000, random_state=321))])
+
+grid_search = GridSearchCV(
+    logit_model2,
+    param_grid=param_grid,
+    scoring="f1",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best F1 score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best logistic regression model for this OvR approach is the one using a standard scaler for the "Rating" variable, a ridge penalty with a regularization strength value (C) of 10 due to having the largest F1 score (0.405).
+
+Define best logistic regression model:
+```{python}
+logit_model2_final = Pipeline(
+  [("preprocessing", preprocessing),
+  ("logit", LogisticRegression(C = 10, penalty="l2", solver = "saga", random_state=321, max_iter=5000))])
+
+logit_final2_fitted = logit_model2_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(logit_final2_fitted, X, y)
+```
+
+## Q1: Hybrid vs. Not Hybrid
+
+Create new column in dataset for hybrid dummy variable:
+```{python}
+cannabis["hybrid"] = (cannabis["Type"]=="hybrid")*1
+cannabis.head()
+```
+
+Define X and y:
+```{python}
+X = cannabis.drop(['Strain', 'Type', 'Effects', 'Flavor', 'indica', 'sativa', 'hybrid'], axis = 1)
+y = cannabis['hybrid']
+```
+
+```{python}
+X.head()
+```
+
+```{python}
+y.head()
+```
+
+**SVC**
+```{python}
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+'svc__C': [0.01, 0.1, 1, 10, 100]}
+
+#perform grid search
+svc_model_ovr3 = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True))])
+
+grid_search = GridSearchCV(
+    svc_model_ovr3,
+    param_grid=param_grid,
+    scoring="f1",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best F1 score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best SVC model for this OvR approach is the one using a standard scaler for the "Rating" variable and a regularization strength value (C) of 0.1 due to having the largest F1 score (0.684).
+
+Define best SVC model:
+```{python}
+svc_ovr3_final = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True, C = 0.1))])
+
+svc_ovr3_fitted = svc_ovr3_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(svc_ovr3_final, X, y)
+```
+
+**Logistic Regression**
+```{python}
+#| warning: False
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+"logit__penalty":["l1", "l2", "elasticnet"],
+"logit__C":[0.001, 0.01, 0.1, 1, 10],
+"logit__l1_ratio": [0.0, 0.25, 0.5, 0.75, 1.0]}
+
+#perform grid search
+logit_model3 = Pipeline(
+  [("preprocessing", preprocessing),
+  ("logit", LogisticRegression(solver = "saga", max_iter = 5000, random_state=321))])
+
+grid_search = GridSearchCV(
+    logit_model3,
+    param_grid=param_grid,
+    scoring="f1",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best F1 score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best logistic regression model for this OvR approach is the one using a min-max scaler for the "Rating" variable and a ridge penalty with a regularization strength value (C) of 0.001 due to having the largest F1 score (0.691).
+
+Define best logistic regression model:
+```{python}
+logit_model3_final = Pipeline(
+  [("preprocessing", preprocessing_min_max),
+  ("logit", LogisticRegression(C = 0.001, penalty="l2", solver = "saga", random_state=321, max_iter=5000))])
+
+logit_final3_fitted = logit_model3_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(logit_final3_fitted, X, y)
+```
+
+## Q2
+
+The hybrid vs. not hybrid specification for the logistic regression model performed the best due to having the largest F1 score. The sativa vs. not sativa specification for the SVC model performed the worst due to having the smallest F1 score. It makes intuitive sense that logistic model was best able to identify hybrid types from non-hybrid types because it is more difficult to differentiate indica or sativa types from hybrid types than hybrid types from pure indica or sativa types. Hybrid strains are more easily differentiated from indica/sativa types since hybrid strains are a mix of indica/sativa while indica and sativa are purely single strain types. When we use indica and sativa as the target variables instead, it makes sense that the model has a more difficult time identifying the target class as indica or sativa due to the "rest" component of these models consisting of both pure strains (indica or sativa) and a mix of strains (hybrid). Also, the logistic model generally does a better job with identifying the probability of an observation belonging to a target class, while SVC's goal is to maximize the margin between two classes (better for differentiation). So, it makes sense that the logistic regression model did better than the SVC model in distinguishing the target class from the rest of the classes.
+
+## Q3: Indica vs. Sativa
+
+Reduce dataset to only indica and sativa types:
+```{python}
+cannabis_ind_sat = cannabis[(cannabis["Type"] == "indica") | (cannabis["Type"] == "sativa")]
+```
+
+Define X and y:
+```{python}
+X = cannabis_ind_sat.drop(['Strain', 'Type', 'Effects', 'Flavor', 'indica', 'sativa', 'hybrid'], axis = 1)
+y = cannabis_ind_sat['Type']
+```
+
+```{python}
+X.head()
+```
+
+```{python}
+y.head()
+```
+
+**SVC**
+```{python}
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+'svc__C': [0.01, 0.1, 1, 10, 100]}
+
+#perform grid search
+svc_model_ovo = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True))])
+
+grid_search = GridSearchCV(
+    svc_model_ovo,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best SVC model for this OvR approach is the one using a standard scaler for the "Rating" variable and a regularization strength value (C) of 0.1 due to having the largest accuracy score (0.869).
+
+Define best SVC model:
+```{python}
+svc_ovo_final = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True, C = 0.1))])
+
+svc_ovo_fitted = svc_ovo_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(svc_ovo_fitted, X, y)
+```
+
+**Logistic Regression**
+```{python}
+#| warning: False
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+"logit__penalty":["l1", "l2", "elasticnet"],
+"logit__C":[0.001, 0.01, 0.1, 1, 10],
+"logit__l1_ratio": [0.0, 0.25, 0.5, 0.75, 1.0]}
+
+#perform grid search
+logit_model_ovo = Pipeline(
+  [("preprocessing", preprocessing),
+  ("logit", LogisticRegression(solver = "saga", max_iter = 5000, random_state=321))])
+
+grid_search = GridSearchCV(
+    logit_model_ovo,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best logistic regression model for this OvR approach is the one using a standard scaler for the "Rating" variable and a ridge penalty with a regularization strength value (C) of 0.1 due to having the largest accuracy score (0.871).
+
+Define best logistic regression model:
+```{python}
+logit_ovo_final = Pipeline(
+  [("preprocessing", preprocessing),
+  ("logit", LogisticRegression(C = 0.1, penalty="l2", solver = "saga", random_state=321, max_iter=5000))])
+
+logit_ovo_fitted = logit_ovo_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(logit_ovo_fitted, X, y)
+```
+
+## Q3: Indica vs. Hybrid
+
+Reduce dataset to only indica and hybrid types:
+```{python}
+cannabis_ind_hyb = cannabis[(cannabis["Type"] == "indica") | (cannabis["Type"] == "hybrid")]
+cannabis_ind_hyb.head()
+```
+
+Define X and y:
+```{python}
+X = cannabis_ind_hyb.drop(['Strain', 'Type', 'Effects', 'Flavor', 'indica', 'sativa', 'hybrid'], axis = 1)
+y = cannabis_ind_hyb['Type']
+```
+
+```{python}
+X.head()
+```
+
+```{python}
+y.head()
+```
+
+**SVC**
+```{python}
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+'svc__C': [0.01, 0.1, 1, 10, 100]}
+
+#perform grid search
+svc_model_ovo2 = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True))])
+
+grid_search = GridSearchCV(
+    svc_model_ovo2,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best SVC model for this OvR approach is the one using a standard scaler for the "Rating" variable and a regularization strength value (C) of 10 due to having the largest accuracy score (0.758).
+
+Define best SVC model:
+```{python}
+svc_ovo2_final = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True, C = 10))])
+
+svc_ovo2_fitted = svc_ovo2_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(svc_ovo2_fitted, X, y)
+```
+
+**Logistic Regression**
+```{python}
+#| warning: False
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+"logit__penalty":["l1", "l2", "elasticnet"],
+"logit__C":[0.001, 0.01, 0.1, 1, 10],
+"logit__l1_ratio": [0.0, 0.25, 0.5, 0.75, 1.0]}
+
+#perform grid search
+logit_model_ovo2 = Pipeline(
+  [("preprocessing", preprocessing),
+  ("logit", LogisticRegression(solver = "saga", max_iter = 5000, random_state=321))])
+
+grid_search = GridSearchCV(
+    logit_model_ovo2,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best logistic regression model for this OvR approach is the one using a min-max scaler for the "Rating" variable and a ridge penalty with a regularization strength value (C) of 0.1 due to having the largest accuracy score (0.763).
+
+Define best logistic regression model:
+```{python}
+logit_ovo2_final = Pipeline(
+  [("preprocessing", preprocessing_min_max),
+  ("logit", LogisticRegression(C = 0.1, penalty="l2", solver = "saga", random_state=321, max_iter=5000))])
+
+logit_ovo2_fitted = logit_ovo2_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(logit_ovo2_fitted, X, y)
+```
+
+## Q3: Hybrid vs. Sativa
+
+Reduce dataset to only sativa and hybrid types:
+```{python}
+cannabis_sat_hyb = cannabis[(cannabis["Type"] == "sativa") | (cannabis["Type"] == "hybrid")]
+cannabis_sat_hyb.head()
+```
+
+Define X and y:
+```{python}
+X = cannabis_sat_hyb.drop(['Strain', 'Type', 'Effects', 'Flavor', 'indica', 'sativa', 'hybrid'], axis = 1)
+y = cannabis_sat_hyb['Type']
+```
+
+```{python}
+X.head()
+```
+
+```{python}
+y.head()
+```
+
+**SVC**
+```{python}
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+'svc__C': [0.01, 0.1, 1, 10, 100]}
+
+#perform grid search
+svc_model_ovo3 = Pipeline(
+  [("preprocessing", preprocessing),
+  ("svc", SVC(kernel="linear", probability=True))])
+
+grid_search = GridSearchCV(
+    svc_model_ovo3,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best SVC model for this OvR approach is the one using a min-max scaler for the "Rating" variable and a regularization strength value (C) of 1 due to having the largest accuracy score (0.747).
+
+Define best SVC model:
+```{python}
+svc_ovo3_final = Pipeline(
+  [("preprocessing", preprocessing_min_max),
+  ("svc", SVC(kernel="linear", probability=True, C = 1))])
+
+svc_ovo3_fitted = svc_ovo3_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(svc_ovo3_fitted, X, y)
+```
+
+**Logistic Regression**
+```{python}
+#| warning: False
+#define parameter space
+param_grid = {"preprocessing__scale":[StandardScaler(), MinMaxScaler()],
+"logit__penalty":["l1", "l2", "elasticnet"],
+"logit__C":[0.001, 0.01, 0.1, 1, 10],
+"logit__l1_ratio": [0.0, 0.25, 0.5, 0.75, 1.0]}
+
+#perform grid search
+logit_model_ovo3 = Pipeline(
+  [("preprocessing", preprocessing),
+  ("logit", LogisticRegression(solver = "saga", max_iter = 5000, random_state=321))])
+
+grid_search = GridSearchCV(
+    logit_model_ovo3,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5,
+    n_jobs = -1
+)
+
+grid_search.fit(X, y)
+print("Best accuracy score:", grid_search.best_score_)
+print("Best params:", grid_search.best_params_)
+```
+
+The best logistic regression model for this OvR approach is the one using a min-max scaler for the "Rating" variable and a lasso penalty with a regularization strength value (C) of 0.1 due to having the largest accuracy score (0.754).
+
+Define best logistic regression model:
+```{python}
+logit_ovo3_final = Pipeline(
+  [("preprocessing", preprocessing_min_max),
+  ("logit", LogisticRegression(C = 0.1, penalty="l1", solver = "saga", random_state=321, max_iter=5000))])
+
+logit_ovo3_fitted = logit_ovo3_final.fit(X, y)
+```
+
+Confusion matrix:
+```{python}
+ConfusionMatrixDisplay.from_estimator(logit_ovo3_fitted, X, y)
+```
+
+## Q4
+
+The indica vs. sativa specification for the logistic regression model performed the best due to having the largest accuracy score. The hybrid vs. sativa specification for the SVC model performed the worst due to having the smallest accuracy score. It makes intuitive sense that logistic model was better able to identify indica types from sativa types than indica/sativa types from the hybrid type because indica and sativa are distinct strains while hybrid types are cross-bred indica and sativa strains, therefore making it more difficult to differentiate between a strain that is purely indica/sativa and a strain that contains a percentage of indica/sativa in it. Additionally, the sativa vs. not sativa OvR model performed the worst in terms of F1 score in the previous section, so it makes sense that the hybrid vs. sativa OvO model also performed the worst in this section. Although the SVC model did not perform the best, it is noteworthy that this model performed much better for the OvO specifications in this section than the OvR specifications in the previous section. This is likely due to the fact that SVC's goal is to maximize the margin between two classes, so is therefore better at differentiating between classes rather than accurately identifying values of the target variable for each observation.
+
+## Q5
+
+Logistic Regression: According to the documentation of the `LogisticRegression()` function it appears that the logistic regression function would automatically take an OvR approach, as the default method of the `multi_class` argument automatically select `ovr` as the classification method.
+
+SVC: According to the documentation of the `SVC()` function, the default method to train the SVC model is `ovo`. Therefore, the SVC model would automatically take an OvO approach.
