@@ -18,7 +18,7 @@ from sklearn.metrics import ConfusionMatrixDisplay, make_scorer, accuracy_score
 import matplotlib.pyplot as plt
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 ```
@@ -32,7 +32,7 @@ cannabis.head()
 
 # Part One: Binary Classification
 
-Dataset that only contains indica and sativa types
+Dataset that only contains indica and sativa types:
 ```{python}
 cannabis_filtered = cannabis[(cannabis["Type"]=="indica") | (cannabis["Type"]=="sativa")]
 cannabis_filtered.head()
@@ -303,7 +303,7 @@ dt_final_fitted = dt_final.fit(X, y)
 Display tree:
 ```{python}
 plt.figure(figsize=(20,10))
-tree.plot_tree(dt_final_fitted, feature_names = X.columns, filled = True, rounded = True, fontsize = 10);
+plot_tree(dt_final_fitted, feature_names = X.columns, filled = True, rounded = True, fontsize = 10);
 ```
 
 ```{python}
@@ -780,7 +780,7 @@ ConfusionMatrixDisplay.from_estimator(logit_final3_fitted, X, y)
 
 ## Q2
 
-The hybrid vs. not hybrid specification for the logistic regression model performed the best due to having the largest F1 score. The sativa vs. not sativa specification for the SVC model performed the worst due to having the smallest F1 score. It makes intuitive sense that logistic model was best able to identify hybrid types from non-hybrid types because it is more difficult to differentiate indica or sativa types from hybrid types than hybrid types from pure indica or sativa types. Hybrid strains are more easily differentiated from indica/sativa types since hybrid strains are a mix of indica/sativa while indica and sativa are purely single strain types. When we use indica and sativa as the target variables instead, it makes sense that the model has a more difficult time identifying the target class as indica or sativa due to the "rest" component of these models consisting of both pure strains (indica or sativa) and a mix of strains (hybrid). Also, the logistic model generally does a better job with identifying the probability of an observation belonging to a target class, while SVC's goal is to maximize the margin between two classes (better for differentiation). So, it makes sense that the logistic regression model did better than the SVC model in distinguishing the target class from the rest of the classes.
+The hybrid vs. not hybrid specification for the logistic regression model performed the best due to having the largest F1 score. The sativa vs. not sativa specification for the SVC model performed the worst due to having the smallest F1 score. It makes intuitive sense that logistic model was best able to identify hybrid types from non-hybrid types because it is more difficult to differentiate indica or sativa types from hybrid types than hybrid types from pure indica or sativa types. Hybrid strains are more easily differentiated from indica/sativa types since hybrid strains are a mix of indica/sativa while indica and sativa are purely single strain types. When we use indica and sativa as the target variables instead, it makes sense that the model has a more difficult time identifying the target class as indica or sativa due to the "rest" component of these models consisting of a mix of both strains (hybrid). Also, the logistic model generally does a better job with identifying the probability of an observation belonging to a target class, while SVC's goal is to maximize the margin between two classes (better for differentiation). So, it makes sense that the logistic regression model did better than the SVC model in distinguishing the target class from the rest of the classes.
 
 ## Q3: Indica vs. Sativa
 
@@ -1102,6 +1102,6 @@ The indica vs. sativa specification for the logistic regression model performed 
 
 ## Q5
 
-Logistic Regression: According to the documentation of the `LogisticRegression()` function it appears that the logistic regression function would automatically take an OvR approach, as the default method of the `multi_class` argument automatically select `ovr` as the classification method.
+Logistic Regression: According to the documentation of the `LogisticRegression()` function, it appears that the logistic regression function would automatically take an OvR approach, as the default method of the `multi_class` argument automatically select `ovr` as the classification method.
 
-SVC: According to the documentation of the `SVC()` function, the default method to train the SVC model is `ovo`. Therefore, the SVC model would automatically take an OvO approach.
+SVC: According to the documentation of the `SVC()` function, the default method to train the SVC model is OvO. Therefore, the SVC model would automatically take an OvO approach.
